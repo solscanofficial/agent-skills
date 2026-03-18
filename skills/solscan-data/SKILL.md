@@ -66,7 +66,7 @@ Available MCP tools:
 | `account transfers` | `--address [filters...]` | SPL + SOL transfer history (supports activity-type, token, flow, time range filters) |
 | `account defi` | `--address` | DeFi protocol interactions |
 | `account balance-change` | `--address` | Historical SOL balance changes |
-| `account transactions` | `--address` | Recent transactions list |
+| `account transactions` | `--address [--before] [--limit]` | Recent transactions list (cursor-based pagination) |
 | `account portfolio` | `--address` | Token holdings with USD value |
 | `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
 | `account stake` | `--address [--page] [--page-size] [--sort-by] [--sort-order]` | Active stake accounts (page-size: 10/20/30/40) |
@@ -96,6 +96,40 @@ Available MCP tools:
 > - `--sort-order`: asc|desc
 > - `--page-size`: 10, 20, 30, 40 (default: 10)
 
+> **`account transactions` pagination**:
+> - Uses cursor-based pagination with `--before` (transaction signature)
+> - `--limit`: 10, 20, 30, 40 (default: 10)
+> - No page/page_size parameters
+
+> **`token search` parameters**:
+> - `--keyword`: Search term (required)
+> - `--search-by`: combination|address|name|symbol
+> - `--search-mode`: exact|fuzzy
+> - `--page`, `--page-size`: Standard pagination
+
+> **`nft activities` parameters** (all optional):
+> - `--from`, `--to`: Filter by address
+> - `--activity-type`: Type of activity
+> - `--token`: Token address
+> - `--collection`: Collection address
+> - `--from-time`, `--to-time`: Unix timestamp range
+> - `--page-size`: 12, 24, 36 (default: 12)
+
+> **`token markets` parameters**:
+> - `--token`: Token address(es) - REQUIRED (max 5, comma-separated)
+> - `--program`: Filter by DEX program
+> - `--sort-by`: Sort field (e.g., created_time)
+> - `--page`, `--page-size`: Standard pagination
+
+> **`program analytics` parameters**:
+> - `--address`: Program address (required)
+> - `--range`: 7 or 30 days (required)
+
+> **`token historical` parameters**:
+> - `--address`: Token address (required)
+> - `--range`: 7 or 30 days
+> - `--from-time`, `--to-time`: Unix timestamp range
+
 ### Token
 
 | Action | Key Params | Returns |
@@ -105,14 +139,14 @@ Available MCP tools:
 | `token price` | `--address` | Current USD price |
 | `token price-multi` | `--addresses` | Batch prices |
 | `token holders` | `--address` | Top holder list with amounts |
-| `token markets` | `--address` | DEX markets trading this token |
+| `token markets` | `--token [--page] [--page-size] [--program] [--sort-by]` | DEX markets for token(s) (max 5 tokens, comma-separated) |
 | `token transfers` | `--address` | Transfer history |
 | `token defi` | `--address` | DeFi activity |
 | `token defi-export` | `--address` | DeFi activity CSV |
-| `token historical` | `--address --type line` | Price history chart data |
-| `token search` | `--query` | Search by keyword/name |
+| `token historical` | `--address [--range] [--from-time] [--to-time]` | Historical price data (range: 7 or 30 days) |
+| `token search` | `--keyword [--page] [--page-size] [--search-by] [--search-mode]` | Search tokens by keyword/address/name/symbol |
 | `token trending` | — | Currently trending tokens |
-| `token list` | — | Full token list |
+| `token list` | `[--page] [--page-size] [--sort-by] [--sort-order]` | Full token list (sort: holder|market_cap|created_time) |
 | `token top` | — | Top tokens by market cap |
 | `token latest` | — | Newly listed tokens |
 
@@ -125,14 +159,14 @@ Available MCP tools:
 | `transaction last` | — | Most recent transactions |
 | `transaction actions` | `--signature` | Human-readable decoded actions |
 | `transaction actions-multi` | `--signatures` | Batch decoded actions |
-| `transaction fees` | `--signature` | Fee breakdown |
+| `transaction fees` | — | Network fees statistics (no parameters) |
 
 ### NFT
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `nft news` | — | Latest NFT activity feed |
-| `nft activities` | `--address` | NFT transfer/sale history |
+| `nft news` | `--filter [--page] [--page-size]` | Latest NFT activity feed (filter: created_time, page-size: 12/24/36) |
+| `nft activities` | `[filters...]` | NFT activities (all filters optional: from, to, activity-type, token, collection, etc.) |
 | `nft collections` | — | Top NFT collections |
 | `nft items` | `--address` | Items inside a collection |
 
@@ -142,7 +176,7 @@ Available MCP tools:
 |---|---|---|
 | `block last` | — | Most recent blocks |
 | `block detail` | `--block` | Block metadata by slot number |
-| `block transactions` | `--block` | All transactions in a block |
+| `block transactions` | `--block [--page] [--page-size] [--exclude-vote] [--program]` | Transactions in block (exclude voting tx optional) |
 
 ### Market
 
@@ -158,7 +192,7 @@ Available MCP tools:
 |---|---|---|
 | `program list` | — | All indexed programs |
 | `program popular` | — | Most-used programs |
-| `program analytics` | `--address` | Usage stats for a program |
+| `program analytics` | `--address --range` | Program analytics (range: 7 or 30 days, required) |
 
 ### Monitor
 

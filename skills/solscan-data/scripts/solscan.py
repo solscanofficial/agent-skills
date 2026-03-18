@@ -52,10 +52,10 @@ def setup_account_parser(subparsers):
     p_tokens.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page: 10, 20, 30, or 40')
     p_tokens.add_argument('--hide-zero', action='store_true', help='Filter tokens with zero amount')
 
-    p_txs = sp.add_parser('transactions', help='Get transactions')
+    p_txs = sp.add_parser('transactions', help='Get account transactions')
     p_txs.add_argument('--address', required=True)
-    p_txs.add_argument('--page', type=int, default=1)
-    p_txs.add_argument('--page-size', type=int, default=10)
+    p_txs.add_argument('--before', help='Cursor for pagination (transaction signature)')
+    p_txs.add_argument('--limit', type=int, default=10, choices=[10, 20, 30, 40], help='Number of transactions')
     
     p_transfers = sp.add_parser('transfers', help='Get transfers')
     p_transfers.add_argument('--address', required=True)
@@ -110,7 +110,10 @@ def handle_account(args):
     if args.action == 'detail': return make_request("/account/detail", {"address": args.address})
     elif args.action == 'data-decoded': return make_request("/account/data-decoded", {"address": args.address})
     elif args.action == 'tokens': return make_request("/account/token-accounts", {"address": args.address, "type": args.type, "page": args.page, "page_size": args.page_size, "hide_zero": args.hide_zero})
-    elif args.action == 'transactions': return make_request("/account/transactions", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'transactions':
+        params = {"address": args.address, "limit": args.limit}
+        if args.before: params["before"] = args.before
+        return make_request("/account/transactions", params)
     elif args.action == 'transfers':
         params = {
             "address": args.address,
@@ -168,16 +171,19 @@ def setup_token_parser(subparsers):
     sp.add_parser('price-multi', help='Get multiple prices').add_argument('--addresses', required=True)
 
     p_market = sp.add_parser('markets', help='Get markets')
-    p_market.add_argument('--address', required=True)
+    p_market.add_argument('--token', required=True, help='Token address(es) (max 5, comma-separated)')
     p_market.add_argument('--page', type=int, default=1)
+    p_market.add_argument('--page-size', type=int, default=10)
+    p_market.add_argument('--program', help='Filter by DEX program')
+    p_market.add_argument('--sort-by', help='Sort by field (e.g., created_time)')
     
     sp.add_parser('trending', help='Get trending').add_argument('--limit', type=int, default=10)
 
     p_list = sp.add_parser('list', help='List tokens')
     p_list.add_argument('--page', type=int, default=1)
     p_list.add_argument('--page-size', type=int, default=10)
-    p_list.add_argument('--sort_by', default='market_cap_rank')
-    p_list.add_argument('--direction', default='asc')
+    p_list.add_argument('--sort-by', default='holder', choices=['holder', 'market_cap', 'created_time'], help='Sort field')
+    p_list.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order')
 
     sp.add_parser('top', help='Get top tokens').add_argument('--filter', default='all')
     sp.add_parser('latest', help='Get latest tokens').add_argument('--limit', type=int, default=10)
@@ -194,13 +200,18 @@ def setup_token_parser(subparsers):
     
     sp.add_parser('defi-export', help='Export DeFi activities').add_argument('--address', required=True)
     
-    p_hist = sp.add_parser('historical', help='Get historical data')
+    p_hist = sp.add_parser('historical', help='Get historical price data')
     p_hist.add_argument('--address', required=True)
-    p_hist.add_argument('--type', default='line')
-    p_hist.add_argument('--time_from', type=int)
-    p_hist.add_argument('--time_to', type=int)
+    p_hist.add_argument('--range', type=int, choices=[7, 30], help='Time range in days (7 or 30)')
+    p_hist.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_hist.add_argument('--to-time', type=int, help='To Unix timestamp')
 
-    sp.add_parser('search', help='Search tokens').add_argument('--query', required=True)
+    p_search = sp.add_parser('search', help='Search tokens')
+    p_search.add_argument('--keyword', required=True)
+    p_search.add_argument('--page', type=int, default=1)
+    p_search.add_argument('--page-size', type=int, default=10)
+    p_search.add_argument('--search-by', choices=['combination', 'address', 'name', 'symbol'], help='Search field')
+    p_search.add_argument('--search-mode', choices=['exact', 'fuzzy'], help='Search mode')
 
 def handle_token(args):
     if args.action == 'meta': return make_request("/token/meta", {"address": args.address})
@@ -208,16 +219,33 @@ def handle_token(args):
     elif args.action == 'holders': return make_request("/token/holders", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'price': return make_request("/token/price", {"address": args.address})
     elif args.action == 'price-multi': return make_request("/token/price/multi", {"address": args.addresses})
-    elif args.action == 'markets': return make_request("/token/markets", {"address": args.address, "page": args.page})
+    elif args.action == 'markets':
+        params = {
+            "token": args.token.split(',') if args.token else [],
+            "page": args.page,
+            "page_size": args.page_size
+        }
+        if args.program: params["program"] = args.program
+        if args.sort_by: params["sort_by"] = args.sort_by
+        return make_request("/token/markets", params)
     elif args.action == 'trending': return make_request("/token/trending", {"limit": args.limit})
-    elif args.action == 'list': return make_request("/token/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "direction": args.direction})
+    elif args.action == 'list': return make_request("/token/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order})
     elif args.action == 'top': return make_request("/token/top", {"filter": args.filter})
     elif args.action == 'latest': return make_request("/token/latest", {"limit": args.limit})
     elif args.action == 'transfers': return make_request("/token/transfer", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi': return make_request("/token/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi-export': return make_request("/token/defi/activities/export", {"address": args.address})
-    elif args.action == 'historical': return make_request("/token/historical-data", {"address": args.address, "type": args.type, "time_from": args.time_from, "time_to": args.time_to})
-    elif args.action == 'search': return make_request("/token/search", {"q": args.query})
+    elif args.action == 'historical':
+        params = {"address": args.address}
+        if args.range: params["range"] = args.range
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/historical-data", params)
+    elif args.action == 'search':
+        params = {"keyword": args.keyword, "page": args.page, "page_size": args.page_size}
+        if args.search_by: params["search_by"] = args.search_by
+        if args.search_mode: params["search_mode"] = args.search_mode
+        return make_request("/token/search", params)
 
 
 # --- Transaction Commands ---
@@ -235,7 +263,7 @@ def setup_transaction_parser(subparsers):
     p_actions_m = sp.add_parser('actions-multi', help='Get multiple actions')
     p_actions_m.add_argument('--signatures', required=True)
     
-    sp.add_parser('fees', help='Get fees').add_argument('--signature', required=True)
+    sp.add_parser('fees', help='Get network fees statistics')
 
 def handle_transaction(args):
     if args.action == 'detail': return make_request("/transaction/detail", {"tx": args.signature})
@@ -243,7 +271,7 @@ def handle_transaction(args):
     elif args.action == 'last': return make_request("/transaction/last", {"limit": args.limit})
     elif args.action == 'actions': return make_request("/transaction/actions", {"tx": args.signature})
     elif args.action == 'actions-multi': return make_request("/transaction/actions/multi", {"txs": args.signatures})
-    elif args.action == 'fees': return make_request("/transaction/fees", {"tx": args.signature})
+    elif args.action == 'fees': return make_request("/transaction/fees")
 
 
 # --- NFT Commands ---
@@ -251,11 +279,22 @@ def setup_nft_parser(subparsers):
     parser = subparsers.add_parser('nft', help='NFT operations')
     sp = parser.add_subparsers(dest='action', required=True)
     
-    sp.add_parser('news', help='Get news')
+    p_news = sp.add_parser('news', help='Get NFT news/activities')
+    p_news.add_argument('--filter', required=True, choices=['created_time'], help='Filter type (default: created_time)')
+    p_news.add_argument('--page', type=int, default=1)
+    p_news.add_argument('--page-size', type=int, default=12, choices=[12, 24, 36])
     
-    p_act = sp.add_parser('activities', help='Get activities')
-    p_act.add_argument('--address', required=True)
+    p_act = sp.add_parser('activities', help='Get NFT activities')
+    p_act.add_argument('--from', help='Filter from address')
+    p_act.add_argument('--to', help='Filter to address')
+    p_act.add_argument('--source', help='Filter by source')
+    p_act.add_argument('--activity-type', help='Filter by activity type')
+    p_act.add_argument('--token', help='Filter by token address')
+    p_act.add_argument('--collection', help='Filter by collection')
+    p_act.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_act.add_argument('--to-time', type=int, help='To Unix timestamp')
     p_act.add_argument('--page', type=int, default=1)
+    p_act.add_argument('--page-size', type=int, default=12, choices=[12, 24, 36])
     
     p_cols = sp.add_parser('collections', help='Get collections')
     p_cols.add_argument('--page', type=int, default=1)
@@ -267,8 +306,18 @@ def setup_nft_parser(subparsers):
     p_items.add_argument('--page-size', type=int, default=10)
 
 def handle_nft(args):
-    if args.action == 'news': return make_request("/nft/news")
-    elif args.action == 'activities': return make_request("/nft/activities", {"token_address": args.address, "page": args.page})
+    if args.action == 'news': return make_request("/nft/news", {"filter": args.filter, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'activities':
+        params = {"page": args.page, "page_size": args.page_size}
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if getattr(args, 'to'): params["to"] = getattr(args, 'to')
+        if args.source: params["source"] = args.source
+        if args.activity_type: params["activity_type"] = args.activity_type
+        if args.token: params["token"] = args.token
+        if args.collection: params["collection"] = args.collection
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/nft/activities", params)
     elif args.action == 'collections': return make_request("/nft/collection/lists", {"page": args.page, "page_size": args.page_size})
     elif args.action == 'items': return make_request("/nft/collection/items", {"collection": args.address, "page": args.page, "page_size": args.page_size})
 
@@ -287,11 +336,17 @@ def setup_block_parser(subparsers):
     p_txs.add_argument('--block', required=True)
     p_txs.add_argument('--page', type=int, default=1)
     p_txs.add_argument('--page-size', type=int, default=10)
+    p_txs.add_argument('--exclude-vote', action='store_true', help='Exclude voting transactions')
+    p_txs.add_argument('--program', help='Filter by program')
 
 def handle_block(args):
     if args.action == 'last': return make_request("/block/last", {"limit": args.limit})
     elif args.action == 'detail': return make_request("/block/detail", {"block": args.block})
-    elif args.action == 'transactions': return make_request("/block/transactions", {"block": args.block, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'transactions':
+        params = {"block": args.block, "page": args.page, "page_size": args.page_size}
+        if args.exclude_vote: params["exclude_vote"] = args.exclude_vote
+        if args.program: params["program"] = args.program
+        return make_request("/block/transactions", params)
 
 
 # --- Market Commands ---
@@ -323,12 +378,12 @@ def setup_program_parser(subparsers):
     
     p_analytics = sp.add_parser('analytics', help='Program analytics')
     p_analytics.add_argument('--address', required=True)
-    p_analytics.add_argument('--type', default='24h')
+    p_analytics.add_argument('--range', type=int, required=True, choices=[7, 30], help='Analytics range in days (7 or 30)')
 
 def handle_program(args):
     if args.action == 'list': return make_request("/program/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "direction": args.direction})
     elif args.action == 'popular': return make_request("/program/popular/platforms")
-    elif args.action == 'analytics': return make_request("/program/analytics", {"program_address": args.address, "type": args.type})
+    elif args.action == 'analytics': return make_request("/program/analytics", {"address": args.address, "range": args.range})
 
 # --- Monitor Commands ---
 def setup_monitor_parser(subparsers):
