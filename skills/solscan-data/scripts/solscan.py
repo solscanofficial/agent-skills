@@ -76,7 +76,12 @@ def setup_account_parser(subparsers):
     p_transfers.add_argument('--sort-order', choices=['asc', 'desc'], default='desc', help='Sort order')
     p_transfers.add_argument('--value', nargs=2, type=float, help='Value range in USD (min max)')
 
-    sp.add_parser('stake', help='Get stake accounts').add_argument('--address', required=True)
+    p_stake = sp.add_parser('stake', help='Get stake accounts')
+    p_stake.add_argument('--address', required=True)
+    p_stake.add_argument('--page', type=int, default=1)
+    p_stake.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page')
+    p_stake.add_argument('--sort-by', default='active_stake', choices=['active_stake', 'delegated_stake'], help='Sort by field')
+    p_stake.add_argument('--sort-order', choices=['asc', 'desc'], help='Sort order: asc or desc')
     sp.add_parser('portfolio', help='Get portfolio').add_argument('--address', required=True)
     
     p_defi = sp.add_parser('defi', help='Get DeFi activities')
@@ -127,7 +132,15 @@ def handle_account(args):
         if args.flow: params["flow"] = args.flow
         if args.value: params["value"] = args.value
         return make_request("/account/transfer", params)
-    elif args.action == 'stake': return make_request("/account/stake", {"address": args.address})
+    elif args.action == 'stake':
+        params = {
+            "address": args.address,
+            "page": args.page,
+            "page_size": args.page_size,
+            "sort_by": args.sort_by
+        }
+        if args.sort_order: params["sort_order"] = args.sort_order
+        return make_request("/account/stake", params)
     elif args.action == 'portfolio': return make_request("/account/portfolio", {"address": args.address})
     elif args.action == 'defi': return make_request("/account/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi-export': return make_request("/account/defi/activities/export", {"address": args.address})

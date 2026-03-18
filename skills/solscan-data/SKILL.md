@@ -69,7 +69,7 @@ Available MCP tools:
 | `account transactions` | `--address` | Recent transactions list |
 | `account portfolio` | `--address` | Token holdings with USD value |
 | `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
-| `account stake` | `--address` | Active stake accounts |
+| `account stake` | `--address [--page] [--page-size] [--sort-by] [--sort-order]` | Active stake accounts (page-size: 10/20/30/40) |
 | `account reward-export` | `--address` | Staking reward history CSV |
 | `account transfer-export` | `--address` | Transfer history CSV |
 | `account metadata` | `--address` | Label, icon, tags, domain, funder |
@@ -90,6 +90,11 @@ Available MCP tools:
 > - `--value`: USD value range (min max)
 > - `--from-time`, `--to-time`: Unix timestamp range
 > - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
+
+> **`account stake` options**:
+> - `--sort-by`: active_stake|delegated_stake (default: active_stake)
+> - `--sort-order`: asc|desc
+> - `--page-size`: 10, 20, 30, 40 (default: 10)
 
 ### Token
 
