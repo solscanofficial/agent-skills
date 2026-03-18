@@ -68,7 +68,7 @@ Available MCP tools:
 | `account balance-change` | `--address` | Historical SOL balance changes |
 | `account transactions` | `--address` | Recent transactions list |
 | `account portfolio` | `--address` | Token holdings with USD value |
-| `account tokens` | `--address` | Associated token accounts |
+| `account tokens` | `--address --type` | Associated token/NFT accounts (type: "token" or "nft") |
 | `account stake` | `--address` | Active stake accounts |
 | `account reward-export` | `--address` | Staking reward history CSV |
 | `account transfer-export` | `--address` | Transfer history CSV |

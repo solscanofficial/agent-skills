@@ -47,6 +47,7 @@ def setup_account_parser(subparsers):
     
     p_tokens = sp.add_parser('tokens', help='Get token accounts')
     p_tokens.add_argument('--address', required=True)
+    p_tokens.add_argument('--type', required=True, choices=['token', 'nft'], help='Account type: token or nft')
     p_tokens.add_argument('--page', type=int, default=1)
     p_tokens.add_argument('--page-size', type=int, default=10)
 
@@ -88,7 +89,7 @@ def setup_account_parser(subparsers):
 def handle_account(args):
     if args.action == 'detail': return make_request("/account/detail", {"address": args.address})
     elif args.action == 'data-decoded': return make_request("/account/data-decoded", {"address": args.address})
-    elif args.action == 'tokens': return make_request("/account/token-accounts", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'tokens': return make_request("/account/token-accounts", {"address": args.address, "type": args.type, "page": args.page, "page_size": args.page_size})
     elif args.action == 'transactions': return make_request("/account/transactions", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'transfers': return make_request("/account/transfer", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'stake': return make_request("/account/stake", {"address": args.address})
