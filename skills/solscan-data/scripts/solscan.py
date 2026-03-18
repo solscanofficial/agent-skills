@@ -47,9 +47,10 @@ def setup_account_parser(subparsers):
     
     p_tokens = sp.add_parser('tokens', help='Get token accounts')
     p_tokens.add_argument('--address', required=True)
-    p_tokens.add_argument('--type', required=True, choices=['token', 'nft'], help='Account type: token or nft')
+    p_tokens.add_argument('--type', required=True, choices=['token', 'nft'], help='Type of token: token or nft')
     p_tokens.add_argument('--page', type=int, default=1)
-    p_tokens.add_argument('--page-size', type=int, default=10)
+    p_tokens.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page: 10, 20, 30, or 40')
+    p_tokens.add_argument('--hide-zero', action='store_true', help='Filter tokens with zero amount')
 
     p_txs = sp.add_parser('transactions', help='Get transactions')
     p_txs.add_argument('--address', required=True)
@@ -58,8 +59,22 @@ def setup_account_parser(subparsers):
     
     p_transfers = sp.add_parser('transfers', help='Get transfers')
     p_transfers.add_argument('--address', required=True)
+    p_transfers.add_argument('--activity-type', help='Activity type (comma-separated): ACTIVITY_SPL_TRANSFER,ACTIVITY_SPL_BURN,ACTIVITY_SPL_MINT,etc')
+    p_transfers.add_argument('--token-account', help='Filter by specific token account address')
+    p_transfers.add_argument('--from', help='Filter from address(es) (max 5, comma-separated)')
+    p_transfers.add_argument('--exclude-from', help='Exclude from address(es) (max 5, comma-separated)')
+    p_transfers.add_argument('--to', help='Filter to address(es) (max 5, comma-separated)')
+    p_transfers.add_argument('--exclude-to', help='Exclude to address(es) (max 5, comma-separated)')
+    p_transfers.add_argument('--token', help='Filter by token address(es) (max 5, comma-separated)')
+    p_transfers.add_argument('--amount', nargs=2, type=float, help='Amount range (min max)')
+    p_transfers.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_transfers.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_transfers.add_argument('--exclude-amount-zero', action='store_true', help='Exclude zero amount transfers')
+    p_transfers.add_argument('--flow', choices=['in', 'out'], help='Transfer direction: in or out')
     p_transfers.add_argument('--page', type=int, default=1)
-    p_transfers.add_argument('--page-size', type=int, default=10)
+    p_transfers.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100], help='Items per page')
+    p_transfers.add_argument('--sort-order', choices=['asc', 'desc'], default='desc', help='Sort order')
+    p_transfers.add_argument('--value', nargs=2, type=float, help='Value range in USD (min max)')
 
     sp.add_parser('stake', help='Get stake accounts').add_argument('--address', required=True)
     sp.add_parser('portfolio', help='Get portfolio').add_argument('--address', required=True)
@@ -89,9 +104,29 @@ def setup_account_parser(subparsers):
 def handle_account(args):
     if args.action == 'detail': return make_request("/account/detail", {"address": args.address})
     elif args.action == 'data-decoded': return make_request("/account/data-decoded", {"address": args.address})
-    elif args.action == 'tokens': return make_request("/account/token-accounts", {"address": args.address, "type": args.type, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'tokens': return make_request("/account/token-accounts", {"address": args.address, "type": args.type, "page": args.page, "page_size": args.page_size, "hide_zero": args.hide_zero})
     elif args.action == 'transactions': return make_request("/account/transactions", {"address": args.address, "page": args.page, "page_size": args.page_size})
-    elif args.action == 'transfers': return make_request("/account/transfer", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'transfers':
+        params = {
+            "address": args.address,
+            "page": args.page,
+            "page_size": args.page_size,
+            "sort_order": args.sort_order
+        }
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if args.token_account: params["token_account"] = args.token_account
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.exclude_from: params["exclude_from"] = args.exclude_from
+        if getattr(args, 'to'): params["to"] = getattr(args, 'to')
+        if args.exclude_to: params["exclude_to"] = args.exclude_to
+        if args.token: params["token"] = args.token
+        if args.amount: params["amount"] = args.amount
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        if args.exclude_amount_zero: params["exclude_amount_zero"] = args.exclude_amount_zero
+        if args.flow: params["flow"] = args.flow
+        if args.value: params["value"] = args.value
+        return make_request("/account/transfer", params)
     elif args.action == 'stake': return make_request("/account/stake", {"address": args.address})
     elif args.action == 'portfolio': return make_request("/account/portfolio", {"address": args.address})
     elif args.action == 'defi': return make_request("/account/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})

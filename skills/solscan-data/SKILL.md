@@ -63,12 +63,12 @@ Available MCP tools:
 | Action | Key Params | Returns |
 |---|---|---|
 | `account detail` | `--address` | Lamports, owner, executable flag |
-| `account transfers` | `--address` | SPL + SOL transfer history |
+| `account transfers` | `--address [filters...]` | SPL + SOL transfer history (supports activity-type, token, flow, time range filters) |
 | `account defi` | `--address` | DeFi protocol interactions |
 | `account balance-change` | `--address` | Historical SOL balance changes |
 | `account transactions` | `--address` | Recent transactions list |
 | `account portfolio` | `--address` | Token holdings with USD value |
-| `account tokens` | `--address --type` | Associated token/NFT accounts (type: "token" or "nft") |
+| `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
 | `account stake` | `--address` | Active stake accounts |
 | `account reward-export` | `--address` | Staking reward history CSV |
 | `account transfer-export` | `--address` | Transfer history CSV |
@@ -80,6 +80,16 @@ Available MCP tools:
 > **`account metadata` response fields**: `account_address`, `account_label`,
 > `account_icon`, `account_tags`, `account_type`, `account_domain`,
 > `funded_by`, `tx_hash`, `block_time`
+
+> **`account transfers` filter options**:
+> - `--activity-type`: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY
+> - `--token`: Filter by token address(es) (max 5, comma-separated)
+> - `--flow`: in|out (transfer direction)
+> - `--from`, `--to`: Filter by address(es) (max 5, comma-separated)
+> - `--amount`: Amount range (min max)
+> - `--value`: USD value range (min max)
+> - `--from-time`, `--to-time`: Unix timestamp range
+> - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
 
 ### Token
 
