@@ -64,10 +64,10 @@ Available MCP tools:
 |---|---|---|
 | `account detail` | `--address` | Lamports, owner, executable flag |
 | `account transfers` | `--address [filters...]` | SPL + SOL transfer history (supports activity-type, token, flow, time range filters) |
-| `account defi` | `--address` | DeFi protocol interactions |
-| `account balance-change` | `--address` | Historical SOL balance changes |
+| `account defi` | `--address [filters...]` | DeFi protocol interactions (activity-type, from, platform, source, token, time range) |
+| `account balance-change` | `--address [filters...]` | Historical balance changes (token, flow, amount, time range, remove-spam) |
 | `account transactions` | `--address [--before] [--limit]` | Recent transactions list (cursor-based pagination) |
-| `account portfolio` | `--address` | Token holdings with USD value |
+| `account portfolio` | `--address [--exclude-low-score-tokens]` | Token holdings with USD value |
 | `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
 | `account stake` | `--address [--page] [--page-size] [--sort-by] [--sort-order]` | Active stake accounts (page-size: 10/20/30/40) |
 | `account reward-export` | `--address` | Staking reward history CSV |
@@ -130,6 +130,26 @@ Available MCP tools:
 > - `--range`: 7 or 30 days
 > - `--from-time`, `--to-time`: Unix timestamp range
 
+> **`account defi` filter options**:
+> - `--activity-type`: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, ACTIVITY_SPL_TOKEN_STAKE, ACTIVITY_LST_STAKE, ACTIVITY_SPL_TOKEN_UNSTAKE, ACTIVITY_LST_UNSTAKE, ACTIVITY_TOKEN_DEPOSIT_VAULT, ACTIVITY_TOKEN_WITHDRAW_VAULT, ACTIVITY_SPL_INIT_MINT, ACTIVITY_ORDERBOOK_ORDER_PLACE, ACTIVITY_BORROWING, ACTIVITY_REPAY_BORROWING, ACTIVITY_LIQUIDATE_BORROWING, ACTIVITY_BRIDGE_ORDER_IN, ACTIVITY_BRIDGE_ORDER_OUT
+> - `--from`: Filter by source address
+> - `--platform`, `--source`: Filter by platform/source (comma-separated, max 5)
+> - `--token`: Filter by token address
+> - `--from-time`, `--to-time`: Unix timestamp range
+> - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
+
+> **`account balance-change` filter options**:
+> - `--token-account`: Filter by specific token account
+> - `--token`: Filter by token address
+> - `--amount`: Amount range (min max)
+> - `--flow`: in|out
+> - `--remove-spam`: true|false
+> - `--from-time`, `--to-time`: Unix timestamp range
+> - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
+
+> **`token latest` platforms**:
+> - `--platform-id`: jupiter, lifinity, meteora, orca, raydium, phoenix, sanctum, kamino, pumpfun, openbook, apepro, stabble, jupiterdca, jupiter_limit_order, solfi, zerofi, letsbonkfun_launchpad, raydium_launchlab, believe_launchpad, moonshot_launchpad, jup_studio_launchpad, bags_launchpad
+
 ### Token
 
 | Action | Key Params | Returns |
@@ -148,7 +168,7 @@ Available MCP tools:
 | `token trending` | — | Currently trending tokens |
 | `token list` | `[--page] [--page-size] [--sort-by] [--sort-order]` | Full token list (sort: holder|market_cap|created_time) |
 | `token top` | — | Top tokens by market cap |
-| `token latest` | — | Newly listed tokens |
+| `token latest` | `[--platform-id] [--page] [--page-size]` | Newly listed tokens (page-size: 10/20/30/40/60/100) |
 
 ### Transaction
 
@@ -182,15 +202,15 @@ Available MCP tools:
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `market list` | — | All trading pools/markets |
-| `market info` | — | General market overview |
-| `market volume` | — | 24h volume data |
+| `market list` | `[--page] [--page-size] [--program] [--token-address] [--sort-by] [--sort-order]` | All trading pools/markets (sort: created_time\|volumes_24h\|trades_24h) |
+| `market info` | `--address` | Market pool details by address |
+| `market volume` | `--address [--time]` | Market volume data |
 
 ### Program
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `program list` | — | All indexed programs |
+| `program list` | `[--sort-by] [--sort-order] [--page] [--page-size]` | All indexed programs (sort: num_txs\|num_txs_success\|interaction_volume\|success_rate\|active_users_24h) |
 | `program popular` | — | Most-used programs |
 | `program analytics` | `--address --range` | Program analytics (range: 7 or 30 days, required) |
 
@@ -227,7 +247,7 @@ All error responses include `success: false`, `code`, and `message` fields.
 - [ ] Step 1: `token meta --address <MINT>` → confirm token identity
 - [ ] Step 2: `token price --address <MINT>` → get current price
 - [ ] Step 3: `token holders --address <MINT>` → check concentration risk
-- [ ] Step 4: `token markets --address <MINT>` → find best liquidity pools
+- [ ] Step 4: `token markets --token <MINT>` → find best liquidity pools
 
 ---
 

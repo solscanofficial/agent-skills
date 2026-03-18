@@ -82,19 +82,37 @@ def setup_account_parser(subparsers):
     p_stake.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page')
     p_stake.add_argument('--sort-by', default='active_stake', choices=['active_stake', 'delegated_stake'], help='Sort by field')
     p_stake.add_argument('--sort-order', choices=['asc', 'desc'], help='Sort order: asc or desc')
-    sp.add_parser('portfolio', help='Get portfolio').add_argument('--address', required=True)
-    
+    p_portfolio = sp.add_parser('portfolio', help='Get portfolio')
+    p_portfolio.add_argument('--address', required=True)
+    p_portfolio.add_argument('--exclude-low-score-tokens', action='store_true', help='Exclude low score tokens')
+
     p_defi = sp.add_parser('defi', help='Get DeFi activities')
     p_defi.add_argument('--address', required=True)
+    p_defi.add_argument('--activity-type', help='Filter by activity type(s) (comma-separated): ACTIVITY_TOKEN_SWAP,ACTIVITY_AGG_TOKEN_SWAP,etc')
+    p_defi.add_argument('--from', help='Filter from address')
+    p_defi.add_argument('--platform', help='Filter by platform(s) (comma-separated, max 5)')
+    p_defi.add_argument('--source', help='Filter by source(s) (comma-separated, max 5)')
+    p_defi.add_argument('--token', help='Filter by token address')
+    p_defi.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_defi.add_argument('--to-time', type=int, help='To Unix timestamp')
     p_defi.add_argument('--page', type=int, default=1)
-    p_defi.add_argument('--page-size', type=int, default=10)
+    p_defi.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
+    p_defi.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
 
     sp.add_parser('defi-export', help='Export DeFi activities').add_argument('--address', required=True)
 
     p_balance = sp.add_parser('balance-change', help='Get balance changes')
     p_balance.add_argument('--address', required=True)
+    p_balance.add_argument('--token-account', help='Filter by token account address')
+    p_balance.add_argument('--token', help='Filter by token address')
+    p_balance.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_balance.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_balance.add_argument('--amount', nargs=2, type=float, help='Amount range (min max)')
+    p_balance.add_argument('--flow', choices=['in', 'out'], help='Transfer direction: in or out')
+    p_balance.add_argument('--remove-spam', choices=['true', 'false'], help='Remove spam transactions')
     p_balance.add_argument('--page', type=int, default=1)
-    p_balance.add_argument('--page-size', type=int, default=10)
+    p_balance.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
+    p_balance.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
 
     sp.add_parser('reward-export', help='Export rewards').add_argument('--address', required=True)
     sp.add_parser('transfer-export', help='Export transfers').add_argument('--address', required=True)
@@ -144,10 +162,31 @@ def handle_account(args):
         }
         if args.sort_order: params["sort_order"] = args.sort_order
         return make_request("/account/stake", params)
-    elif args.action == 'portfolio': return make_request("/account/portfolio", {"address": args.address})
-    elif args.action == 'defi': return make_request("/account/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'portfolio':
+        params = {"address": args.address}
+        if args.exclude_low_score_tokens: params["exclude_low_score_tokens"] = args.exclude_low_score_tokens
+        return make_request("/account/portfolio", params)
+    elif args.action == 'defi':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_order": args.sort_order}
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.platform: params["platform"] = args.platform.split(',')
+        if args.source: params["source"] = args.source.split(',')
+        if args.token: params["token"] = args.token
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/account/defi/activities", params)
     elif args.action == 'defi-export': return make_request("/account/defi/activities/export", {"address": args.address})
-    elif args.action == 'balance-change': return make_request("/account/balance_change", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'balance-change':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_order": args.sort_order}
+        if args.token_account: params["token_account"] = args.token_account
+        if args.token: params["token"] = args.token
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        if args.amount: params["amount"] = args.amount
+        if args.flow: params["flow"] = args.flow
+        if args.remove_spam: params["remove_spam"] = args.remove_spam
+        return make_request("/account/balance_change", params)
     elif args.action == 'reward-export': return make_request("/account/reward/export", {"address": args.address})
     elif args.action == 'transfer-export': return make_request("/account/transfer/export", {"address": args.address})
     elif args.action == 'metadata': return make_request("/account/metadata", {"address": args.address})
@@ -185,8 +224,11 @@ def setup_token_parser(subparsers):
     p_list.add_argument('--sort-by', default='holder', choices=['holder', 'market_cap', 'created_time'], help='Sort field')
     p_list.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order')
 
-    sp.add_parser('top', help='Get top tokens').add_argument('--filter', default='all')
-    sp.add_parser('latest', help='Get latest tokens').add_argument('--limit', type=int, default=10)
+    sp.add_parser('top', help='Get top tokens')
+    p_latest = sp.add_parser('latest', help='Get latest tokens')
+    p_latest.add_argument('--platform-id', help='Filter by platform', choices=['jupiter','lifinity','meteora','orca','raydium','phoenix','sanctum','kamino','pumpfun','openbook','apepro','stabble','jupiterdca','jupiter_limit_order','solfi','zerofi','letsbonkfun_launchpad','raydium_launchlab','believe_launchpad','moonshot_launchpad','jup_studio_launchpad','bags_launchpad'])
+    p_latest.add_argument('--page', type=int, default=1)
+    p_latest.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
     
     p_transfer = sp.add_parser('transfers', help='Get token transfers')
     p_transfer.add_argument('--address', required=True)
@@ -230,8 +272,11 @@ def handle_token(args):
         return make_request("/token/markets", params)
     elif args.action == 'trending': return make_request("/token/trending", {"limit": args.limit})
     elif args.action == 'list': return make_request("/token/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order})
-    elif args.action == 'top': return make_request("/token/top", {"filter": args.filter})
-    elif args.action == 'latest': return make_request("/token/latest", {"limit": args.limit})
+    elif args.action == 'top': return make_request("/token/top")
+    elif args.action == 'latest':
+        params = {"page": args.page, "page_size": args.page_size}
+        if args.platform_id: params["platform_id"] = args.platform_id
+        return make_request("/token/latest", params)
     elif args.action == 'transfers': return make_request("/token/transfer", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi': return make_request("/token/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi-export': return make_request("/token/defi/activities/export", {"address": args.address})
@@ -354,14 +399,31 @@ def setup_market_parser(subparsers):
     parser = subparsers.add_parser('market', help='Market operations')
     sp = parser.add_subparsers(dest='action', required=True)
     
-    sp.add_parser('list', help='List markets')
-    sp.add_parser('info', help='Market info')
-    sp.add_parser('volume', help='Market volume')
+    p_mlist = sp.add_parser('list', help='List markets')
+    p_mlist.add_argument('--page', type=int, default=1)
+    p_mlist.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
+    p_mlist.add_argument('--program', help='Filter by program')
+    p_mlist.add_argument('--token-address', help='Filter by token address')
+    p_mlist.add_argument('--sort-by', default='volumes_24h', choices=['created_time', 'volumes_24h', 'trades_24h'])
+    p_mlist.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
+
+    sp.add_parser('info', help='Market info').add_argument('--address', required=True)
+
+    p_mvol = sp.add_parser('volume', help='Market volume')
+    p_mvol.add_argument('--address', required=True)
+    p_mvol.add_argument('--time', nargs=2, help='Time range as YYYYMMDD (start end)')
 
 def handle_market(args):
-    if args.action == 'list': return make_request("/market/list")
-    elif args.action == 'info': return make_request("/market/info")
-    elif args.action == 'volume': return make_request("/market/volume")
+    if args.action == 'list':
+        params = {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if args.program: params["program"] = args.program
+        if args.token_address: params["token_address"] = args.token_address
+        return make_request("/market/list", params)
+    elif args.action == 'info': return make_request("/market/info", {"address": args.address})
+    elif args.action == 'volume':
+        params = {"address": args.address}
+        if args.time: params["time"] = args.time
+        return make_request("/market/volume", params)
 
 # --- Program Commands ---
 def setup_program_parser(subparsers):
@@ -371,8 +433,8 @@ def setup_program_parser(subparsers):
     p_list = sp.add_parser('list', help='List programs')
     p_list.add_argument('--page', type=int, default=1)
     p_list.add_argument('--page-size', type=int, default=10)
-    p_list.add_argument('--sort_by', default='tx_count_24h')
-    p_list.add_argument('--direction', default='desc')
+    p_list.add_argument('--sort-by', default='num_txs', choices=['num_txs','num_txs_success','interaction_volume','success_rate','active_users_24h'])
+    p_list.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
     
     sp.add_parser('popular', help='Popular platforms')
     
@@ -381,7 +443,7 @@ def setup_program_parser(subparsers):
     p_analytics.add_argument('--range', type=int, required=True, choices=[7, 30], help='Analytics range in days (7 or 30)')
 
 def handle_program(args):
-    if args.action == 'list': return make_request("/program/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "direction": args.direction})
+    if args.action == 'list': return make_request("/program/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order})
     elif args.action == 'popular': return make_request("/program/popular/platforms")
     elif args.action == 'analytics': return make_request("/program/analytics", {"address": args.address, "range": args.range})
 
