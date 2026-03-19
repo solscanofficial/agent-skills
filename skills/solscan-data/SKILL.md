@@ -339,17 +339,45 @@ Available MCP tools:
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `block last` | `[--limit]` | Most recent blocks |
-| `block detail` | `--block` | Block metadata by slot number |
-| `block transactions` | `--block [--page] [--page-size] [--exclude-vote] [--program]` | Transactions in block (exclude voting tx optional) |
+| `block last` | `[--limit]` | Get the list of the latest blocks |
+| `block detail` | `--block` | Get the details of a block |
+| `block transactions` | `--block [--page] [--page-size] [--exclude-vote] [--program]` | Get the list of transactions of a block |
+
+**`block last` parameters:**
+> - `--limit`: Number of blocks to return (10, 20, 30, 40, 60, 100, default: 10)
+
+**`block detail` parameters:**
+> - `--block`: The slot index of a block (required, minimum: 0)
+
+**`block transactions` parameters:**
+> - `--block`: The slot index of a block (required, minimum: 0)
+> - `--page`: Page number for pagination (default: 1)
+> - `--page-size`: Number of items per page (10, 20, 30, 40, 60, 100, default: 10)
+> - `--exclude-vote`: Excludes vote transactions from the results (boolean flag, default: false)
+> - `--program`: The program used to filter transactions that interact with it (optional, string)
 
 ### Market
 
 | Action | Key Params | Returns |
 |---|---|---|
 | `market list` | `[--page] [--page-size] [--program] [--token-address] [--sort-by] [--sort-order]` | All trading pools/markets (sort: created_time\|volumes_24h\|trades_24h) |
-| `market info` | `--address` | Market pool details by address |
-| `market volume` | `--address [--time]` | Market volume data |
+| `market info` | `--address` | Get market/pool details by address |
+| `market volume` | `--address [--time]` | Get historical market data and volume |
+
+**`market list` parameters:**
+> - `--page`: Page number (default: 1)
+> - `--page-size`: Number of items per page (10, 20, 30, 40, 60, 100, default: 10)
+> - `--program`: Program owner address (optional)
+> - `--token-address`: Token address involved in market (optional)
+> - `--sort-by`: Sort field (created_time, volumes_24h, trades_24h, default: volumes_24h)
+> - `--sort-order`: Sort order (asc, desc, default: desc)
+
+**`market info` parameters:**
+> - `--address`: Market ID/address (required, minimum length: 30 characters)
+
+**`market volume` parameters:**
+> - `--address`: Market ID/address (required, minimum length: 30 characters)
+> - `--time`: Filter data by time range in YYYYMMDD format. Pass start and end date to filter by time range (e.g., `--time 20240701 20240715`). Accepts 1-2 values (optional)
 
 ### Program
 

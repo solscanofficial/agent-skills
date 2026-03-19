@@ -542,18 +542,19 @@ def handle_nft(args):
 def setup_block_parser(subparsers):
     parser = subparsers.add_parser('block', help='Block operations')
     sp = parser.add_subparsers(dest='action', required=True)
-    
-    p_last = sp.add_parser('last', help='Get last blocks')
-    p_last.add_argument('--limit', type=int, default=10, help='Limit (10, 20, 30, 40, 60, 100)')
-    
-    sp.add_parser('detail', help='Get block detail').add_argument('--block', required=True)
-    
-    p_txs = sp.add_parser('transactions', help='Get block transactions')
-    p_txs.add_argument('--block', required=True)
-    p_txs.add_argument('--page', type=int, default=1)
-    p_txs.add_argument('--page-size', type=int, default=10)
-    p_txs.add_argument('--exclude-vote', action='store_true', help='Exclude voting transactions')
-    p_txs.add_argument('--program', help='Filter by program')
+
+    p_last = sp.add_parser('last', help='Get the list of the latest blocks')
+    p_last.add_argument('--limit', type=int, default=10, choices=[10, 20, 30, 40, 60, 100], help='Number of blocks to return: 10, 20, 30, 40, 60, or 100 (default: 10)')
+
+    p_detail = sp.add_parser('detail', help='Get the details of a block')
+    p_detail.add_argument('--block', required=True, type=int, help='The slot index of a block (required, minimum: 0)')
+
+    p_txs = sp.add_parser('transactions', help='Get the list of transactions of a block')
+    p_txs.add_argument('--block', required=True, type=int, help='The slot index of a block (required, minimum: 0)')
+    p_txs.add_argument('--page', type=int, default=1, help='Page number for pagination (default: 1)')
+    p_txs.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100], help='Number of items per page: 10, 20, 30, 40, 60, or 100 (default: 10)')
+    p_txs.add_argument('--exclude-vote', action='store_true', help='Excludes vote transactions from the results')
+    p_txs.add_argument('--program', help='The program used to filter transactions that interact with it (optional, string)')
 
 def handle_block(args):
     if args.action == 'last': return make_request("/block/last", {"limit": args.limit})
@@ -569,20 +570,21 @@ def handle_block(args):
 def setup_market_parser(subparsers):
     parser = subparsers.add_parser('market', help='Market operations')
     sp = parser.add_subparsers(dest='action', required=True)
-    
-    p_mlist = sp.add_parser('list', help='List markets')
-    p_mlist.add_argument('--page', type=int, default=1)
-    p_mlist.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
-    p_mlist.add_argument('--program', help='Filter by program')
-    p_mlist.add_argument('--token-address', help='Filter by token address')
-    p_mlist.add_argument('--sort-by', default='volumes_24h', choices=['created_time', 'volumes_24h', 'trades_24h'])
-    p_mlist.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
 
-    sp.add_parser('info', help='Market info').add_argument('--address', required=True)
+    p_mlist = sp.add_parser('list', help='List pool/markets')
+    p_mlist.add_argument('--page', type=int, default=1, help='Page number (default: 1)')
+    p_mlist.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100], help='Number of items per page (default: 10)')
+    p_mlist.add_argument('--program', help='Program owner address')
+    p_mlist.add_argument('--token-address', help='Token address involved in market')
+    p_mlist.add_argument('--sort-by', default='volumes_24h', choices=['created_time', 'volumes_24h', 'trades_24h'], help='Sort field (default: volumes_24h)')
+    p_mlist.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order (default: desc)')
 
-    p_mvol = sp.add_parser('volume', help='Market volume')
-    p_mvol.add_argument('--address', required=True)
-    p_mvol.add_argument('--time', nargs=2, help='Time range as YYYYMMDD (start end)')
+    p_info = sp.add_parser('info', help='Get market pool details')
+    p_info.add_argument('--address', required=True, help='Market ID/address')
+
+    p_mvol = sp.add_parser('volume', help='Get historical market data')
+    p_mvol.add_argument('--address', required=True, help='Market ID/address')
+    p_mvol.add_argument('--time', nargs=2, help='Time range in YYYYMMDD format (e.g., 20240701 20240715)')
 
 def handle_market(args):
     if args.action == 'list':
