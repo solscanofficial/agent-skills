@@ -97,9 +97,20 @@ def setup_account_parser(subparsers):
     p_defi.add_argument('--to-time', type=int, help='To Unix timestamp')
     p_defi.add_argument('--page', type=int, default=1)
     p_defi.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
-    p_defi.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
+    p_defi.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_defi.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
 
-    sp.add_parser('defi-export', help='Export DeFi activities').add_argument('--address', required=True)
+    p_defi_export = sp.add_parser('defi-export', help='Export DeFi activities')
+    p_defi_export.add_argument('--address', required=True)
+    p_defi_export.add_argument('--activity-type', help='Activity type filter (comma-separated): ACTIVITY_TOKEN_SWAP,ACTIVITY_AGG_TOKEN_SWAP,etc')
+    p_defi_export.add_argument('--from', help='Filter activities from an address')
+    p_defi_export.add_argument('--platform', help='Filter by platform(s) (comma-separated, max 5)')
+    p_defi_export.add_argument('--source', help='Filter by source(s) (comma-separated, max 5)')
+    p_defi_export.add_argument('--token', help='Filter by token address')
+    p_defi_export.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_defi_export.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_defi_export.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_defi_export.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
 
     p_balance = sp.add_parser('balance-change', help='Get balance changes')
     p_balance.add_argument('--address', required=True)
@@ -112,17 +123,35 @@ def setup_account_parser(subparsers):
     p_balance.add_argument('--remove-spam', choices=['true', 'false'], help='Remove spam transactions')
     p_balance.add_argument('--page', type=int, default=1)
     p_balance.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
-    p_balance.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
+    p_balance.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_balance.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
 
-    sp.add_parser('reward-export', help='Export rewards').add_argument('--address', required=True)
-    sp.add_parser('transfer-export', help='Export transfers').add_argument('--address', required=True)
+    p_reward_export = sp.add_parser('reward-export', help='Export stake rewards (max 5000 items, max 1 req/min)')
+    p_reward_export.add_argument('--address', required=True)
+    p_reward_export.add_argument('--time-from', type=int, help='Start time (Unix timestamp in seconds, default: 1 month before time-to)')
+    p_reward_export.add_argument('--time-to', type=int, help='End time (Unix timestamp in seconds, default: current time)')
+
+    p_transfer_export = sp.add_parser('transfer-export', help='Export transfers (max 5000 items, max 1 req/min)')
+    p_transfer_export.add_argument('--address', required=True)
+    p_transfer_export.add_argument('--activity-type', help='Activity type filter (comma-separated): ACTIVITY_SPL_TRANSFER,ACTIVITY_SPL_BURN,etc')
+    p_transfer_export.add_argument('--token-account', help='Filter by specific token account address')
+    p_transfer_export.add_argument('--from', help='Filter from address')
+    p_transfer_export.add_argument('--to', help='Filter to address')
+    p_transfer_export.add_argument('--token', help='Filter by token address')
+    p_transfer_export.add_argument('--amount', nargs=2, type=float, help='Amount range (min max)')
+    p_transfer_export.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_transfer_export.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_transfer_export.add_argument('--exclude-amount-zero', action='store_true', help='Exclude zero amount transfers')
+    p_transfer_export.add_argument('--flow', choices=['in', 'out'], help='Transfer direction: in or out')
     
     sp.add_parser('metadata', help='Get metadata').add_argument('--address', required=True)
     sp.add_parser('metadata-multi', help='Get multiple metadata').add_argument('--addresses', required=True, help='Comma separated addresses')
 
     p_leader = sp.add_parser('leaderboard', help='Get leaderboard')
+    p_leader.add_argument('--sort-by', default='total_values', choices=['sol_values', 'stake_values', 'token_values', 'total_values'], help='Sort by field (default: total_values)')
+    p_leader.add_argument('--sort-order', choices=['asc', 'desc'], help='Sort order: asc or desc')
     p_leader.add_argument('--page', type=int, default=1)
-    p_leader.add_argument('--page-size', type=int, default=10)
+    p_leader.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
 
 def handle_account(args):
     if args.action == 'detail': return make_request("/account/detail", {"address": args.address})
@@ -167,7 +196,7 @@ def handle_account(args):
         if args.exclude_low_score_tokens: params["exclude_low_score_tokens"] = args.exclude_low_score_tokens
         return make_request("/account/portfolio", params)
     elif args.action == 'defi':
-        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_order": args.sort_order}
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
         if args.activity_type: params["activity_type"] = args.activity_type.split(',')
         if getattr(args, 'from'): params["from"] = getattr(args, 'from')
         if args.platform: params["platform"] = args.platform.split(',')
@@ -176,7 +205,16 @@ def handle_account(args):
         if args.from_time: params["from_time"] = args.from_time
         if args.to_time: params["to_time"] = args.to_time
         return make_request("/account/defi/activities", params)
-    elif args.action == 'defi-export': return make_request("/account/defi/activities/export", {"address": args.address})
+    elif args.action == 'defi-export':
+        params = {"address": args.address, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.platform: params["platform"] = args.platform.split(',')
+        if args.source: params["source"] = args.source.split(',')
+        if args.token: params["token"] = args.token
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/account/defi/activities/export", params)
     elif args.action == 'balance-change':
         params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_order": args.sort_order}
         if args.token_account: params["token_account"] = args.token_account
@@ -186,12 +224,32 @@ def handle_account(args):
         if args.amount: params["amount"] = args.amount
         if args.flow: params["flow"] = args.flow
         if args.remove_spam: params["remove_spam"] = args.remove_spam
+        params["sort_by"] = args.sort_by
         return make_request("/account/balance_change", params)
-    elif args.action == 'reward-export': return make_request("/account/reward/export", {"address": args.address})
-    elif args.action == 'transfer-export': return make_request("/account/transfer/export", {"address": args.address})
+    elif args.action == 'reward-export':
+        params = {"address": args.address}
+        if args.time_from: params["time_from"] = args.time_from
+        if args.time_to: params["time_to"] = args.time_to
+        return make_request("/account/reward/export", params)
+    elif args.action == 'transfer-export':
+        params = {"address": args.address}
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if args.token_account: params["token_account"] = args.token_account
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if getattr(args, 'to'): params["to"] = getattr(args, 'to')
+        if args.token: params["token"] = args.token
+        if args.amount: params["amount"] = args.amount
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        if args.exclude_amount_zero: params["exclude_amount_zero"] = args.exclude_amount_zero
+        if args.flow: params["flow"] = args.flow
+        return make_request("/account/transfer/export", params)
     elif args.action == 'metadata': return make_request("/account/metadata", {"address": args.address})
     elif args.action == 'metadata-multi': return make_request("/account/metadata/multi", {"address": args.addresses})
-    elif args.action == 'leaderboard': return make_request("/account/leaderboard", {"page": args.page, "page_size": args.page_size})
+    elif args.action == 'leaderboard':
+        params = {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by}
+        if args.sort_order: params["sort_order"] = args.sort_order
+        return make_request("/account/leaderboard", params)
 
 # --- Token Commands ---
 def setup_token_parser(subparsers):
@@ -204,24 +262,34 @@ def setup_token_parser(subparsers):
     p_holders = sp.add_parser('holders', help='Get holders')
     p_holders.add_argument('--address', required=True)
     p_holders.add_argument('--page', type=int, default=1)
-    p_holders.add_argument('--page-size', type=int, default=10)
+    p_holders.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40])
+    p_holders.add_argument('--from-amount', help='Minimum token holding amount (string format)')
+    p_holders.add_argument('--to-amount', help='Maximum token holding amount (string format)')
     
     p_price = sp.add_parser('price', help='[DEPRECATED] Get price (use historical instead)')
     p_price.add_argument('--address', required=True)
     p_price.add_argument('--from-time', help='Start time in YYYYMMDD format')
     p_price.add_argument('--to-time', help='End time in YYYYMMDD format')
 
-    p_price_multi = sp.add_parser('price-multi', help='[DEPRECATED] Get multiple prices (use historical instead)')
+    p_price_multi = sp.add_parser('price-multi', help='[DEPRECATED] Get multiple prices (use price-history instead)')
     p_price_multi.add_argument('--addresses', required=True, help='Token addresses, comma-separated (max 50)')
     p_price_multi.add_argument('--from-time', help='Start time in YYYYMMDD format')
     p_price_multi.add_argument('--to-time', help='End time in YYYYMMDD format')
 
+    p_price_latest = sp.add_parser('price-latest', help='Get latest prices for multiple tokens')
+    p_price_latest.add_argument('--addresses', required=True, help='Token addresses, comma-separated (max 50)')
+
+    p_price_history = sp.add_parser('price-history', help='Get historical prices for multiple tokens')
+    p_price_history.add_argument('--addresses', required=True, help='Token addresses, comma-separated (max 50)')
+    p_price_history.add_argument('--from-time', help='Start time in YYYYMMDD format')
+    p_price_history.add_argument('--to-time', help='End time in YYYYMMDD format')
+
     p_market = sp.add_parser('markets', help='Get markets')
-    p_market.add_argument('--token', required=True, help='Token address(es) (max 5, comma-separated)')
+    p_market.add_argument('--token', required=True, help='Token address(es): 1 token for all markets, 2 tokens (comma-separated) for pair search')
+    p_market.add_argument('--sort-by', choices=['volume', 'trade', 'tvl', 'trader'], help='Sort by field')
+    p_market.add_argument('--program', help='Filter by program address(es) (comma-separated, max 5)')
     p_market.add_argument('--page', type=int, default=1)
-    p_market.add_argument('--page-size', type=int, default=10)
-    p_market.add_argument('--program', help='Filter by DEX program')
-    p_market.add_argument('--sort-by', help='Sort by field (e.g., created_time)')
+    p_market.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
     
     sp.add_parser('trending', help='Get trending').add_argument('--limit', type=int, default=10)
 
@@ -239,15 +307,44 @@ def setup_token_parser(subparsers):
     
     p_transfer = sp.add_parser('transfers', help='Get token transfers')
     p_transfer.add_argument('--address', required=True)
+    p_transfer.add_argument('--activity-type', help='Transfer type filter (comma-separated): ACTIVITY_SPL_TRANSFER,ACTIVITY_SPL_BURN,ACTIVITY_SPL_MINT,etc')
+    p_transfer.add_argument('--from', help='Filter from address(es) (max 5, comma-separated)')
+    p_transfer.add_argument('--exclude-from', help='Exclude from address(es) (max 5, comma-separated)')
+    p_transfer.add_argument('--to', help='Filter to address(es) (max 5, comma-separated)')
+    p_transfer.add_argument('--exclude-to', help='Exclude to address(es) (max 5, comma-separated)')
+    p_transfer.add_argument('--amount', nargs=2, type=float, help='Amount range (min max)')
+    p_transfer.add_argument('--exclude-amount-zero', action='store_true', help='Exclude zero amount transfers')
+    p_transfer.add_argument('--value', nargs=2, type=float, help='Value range in USD (min max)')
     p_transfer.add_argument('--page', type=int, default=1)
-    p_transfer.add_argument('--page-size', type=int, default=10)
+    p_transfer.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
+    p_transfer.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_transfer.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
 
     p_defi = sp.add_parser('defi', help='Get DeFi activities')
     p_defi.add_argument('--address', required=True)
+    p_defi.add_argument('--from', help='Filter activities from an address')
+    p_defi.add_argument('--platform', help='Filter by platform(s) (comma-separated, max 5)')
+    p_defi.add_argument('--source', help='Filter by source(s) (comma-separated, max 5)')
+    p_defi.add_argument('--activity-type', help='Activity type filter (comma-separated): ACTIVITY_TOKEN_SWAP,ACTIVITY_AGG_TOKEN_SWAP,etc')
+    p_defi.add_argument('--token', help='Filter by token address')
+    p_defi.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_defi.add_argument('--to-time', type=int, help='To Unix timestamp')
     p_defi.add_argument('--page', type=int, default=1)
-    p_defi.add_argument('--page-size', type=int, default=10)
-    
-    sp.add_parser('defi-export', help='Export DeFi activities').add_argument('--address', required=True)
+    p_defi.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
+    p_defi.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_defi.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
+
+    p_defi_export = sp.add_parser('defi-export', help='Export DeFi activities')
+    p_defi_export.add_argument('--address', required=True)
+    p_defi_export.add_argument('--from', help='Filter activities from an address')
+    p_defi_export.add_argument('--platform', help='Filter by platform(s) (comma-separated, max 5)')
+    p_defi_export.add_argument('--source', help='Filter by source(s) (comma-separated, max 5)')
+    p_defi_export.add_argument('--activity-type', help='Activity type filter (comma-separated): ACTIVITY_TOKEN_SWAP,ACTIVITY_AGG_TOKEN_SWAP,etc')
+    p_defi_export.add_argument('--token', help='Filter by token address')
+    p_defi_export.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_defi_export.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_defi_export.add_argument('--sort-by', default='block_time', choices=['block_time'], help='Sort by field (default: block_time)')
+    p_defi_export.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order: asc or desc (default: desc)')
     
     p_hist = sp.add_parser('historical', help='Get historical price data')
     p_hist.add_argument('--address', required=True)
@@ -255,15 +352,22 @@ def setup_token_parser(subparsers):
 
     p_search = sp.add_parser('search', help='Search tokens')
     p_search.add_argument('--keyword', required=True)
+    p_search.add_argument('--search-mode', default='exact', choices=['exact', 'fuzzy'], help='Search mode (default: exact)')
+    p_search.add_argument('--search-by', default='combination', choices=['combination', 'address', 'name', 'symbol'], help='Search field (default: combination)')
+    p_search.add_argument('--exclude-unverified-token', action='store_true', help='Exclude unverified tokens')
+    p_search.add_argument('--sort-by', default='reputation', choices=['reputation', 'market_cap', 'volume_24h'], help='Sort by field (default: reputation)')
+    p_search.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order (default: desc)')
     p_search.add_argument('--page', type=int, default=1)
-    p_search.add_argument('--page-size', type=int, default=10)
-    p_search.add_argument('--search-by', choices=['combination', 'address', 'name', 'symbol'], help='Search field')
-    p_search.add_argument('--search-mode', choices=['exact', 'fuzzy'], help='Search mode')
+    p_search.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40])
 
 def handle_token(args):
     if args.action == 'meta': return make_request("/token/meta", {"address": args.address})
     elif args.action == 'meta-multi': return make_request("/token/meta/multi", {"address": args.addresses})
-    elif args.action == 'holders': return make_request("/token/holders", {"address": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'holders':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size}
+        if args.from_amount: params["from_amount"] = args.from_amount
+        if args.to_amount: params["to_amount"] = args.to_amount
+        return make_request("/token/holders", params)
     elif args.action == 'price':
         params = {"address": args.address}
         if args.from_time: params["from_time"] = args.from_time
@@ -274,13 +378,20 @@ def handle_token(args):
         if args.from_time: params["from_time"] = args.from_time
         if args.to_time: params["to_time"] = args.to_time
         return make_request("/token/price/multi", params)
+    elif args.action == 'price-latest':
+        return make_request("/token/price/latest", {"address": args.addresses.split(',') if args.addresses else []})
+    elif args.action == 'price-history':
+        params = {"address": args.addresses.split(',') if args.addresses else []}
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/price/history", params)
     elif args.action == 'markets':
         params = {
             "token": args.token.split(',') if args.token else [],
             "page": args.page,
             "page_size": args.page_size
         }
-        if args.program: params["program"] = args.program
+        if args.program: params["program"] = args.program.split(',')
         if args.sort_by: params["sort_by"] = args.sort_by
         return make_request("/token/markets", params)
     elif args.action == 'trending': return make_request("/token/trending", {"limit": args.limit})
@@ -290,16 +401,43 @@ def handle_token(args):
         params = {"page": args.page, "page_size": args.page_size}
         if args.platform_id: params["platform_id"] = args.platform_id
         return make_request("/token/latest", params)
-    elif args.action == 'transfers': return make_request("/token/transfer", {"address": args.address, "page": args.page, "page_size": args.page_size})
-    elif args.action == 'defi': return make_request("/token/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
-    elif args.action == 'defi-export': return make_request("/token/defi/activities/export", {"address": args.address})
+    elif args.action == 'transfers':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.exclude_from: params["exclude_from"] = args.exclude_from
+        if getattr(args, 'to'): params["to"] = getattr(args, 'to')
+        if args.exclude_to: params["exclude_to"] = args.exclude_to
+        if args.amount: params["amount"] = args.amount
+        if args.exclude_amount_zero: params["exclude_amount_zero"] = args.exclude_amount_zero
+        if args.value: params["value"] = args.value
+        return make_request("/token/transfer", params)
+    elif args.action == 'defi':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.platform: params["platform"] = args.platform.split(',')
+        if args.source: params["source"] = args.source.split(',')
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if args.token: params["token"] = args.token
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/defi/activities", params)
+    elif args.action == 'defi-export':
+        params = {"address": args.address, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.platform: params["platform"] = args.platform.split(',')
+        if args.source: params["source"] = args.source.split(',')
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
+        if args.token: params["token"] = args.token
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/defi/activities/export", params)
     elif args.action == 'historical':
         params = {"address": args.address, "range": args.range}
         return make_request("/token/historical-data", params)
     elif args.action == 'search':
-        params = {"keyword": args.keyword, "page": args.page, "page_size": args.page_size}
-        if args.search_by: params["search_by"] = args.search_by
-        if args.search_mode: params["search_mode"] = args.search_mode
+        params = {"keyword": args.keyword, "page": args.page, "page_size": args.page_size, "search_mode": args.search_mode, "search_by": args.search_by, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if args.exclude_unverified_token: params["exclude_unverified_token"] = args.exclude_unverified_token
         return make_request("/token/search", params)
 
 
