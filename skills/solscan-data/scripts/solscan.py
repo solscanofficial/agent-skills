@@ -57,7 +57,7 @@ def setup_account_parser(subparsers):
     p_txs.add_argument('--before', help='Cursor for pagination (transaction signature)')
     p_txs.add_argument('--limit', type=int, default=10, choices=[10, 20, 30, 40], help='Number of transactions')
     
-    p_transfers = sp.add_parser('transfers', help='Get transfers')
+    p_transfers = sp.add_parser('transfer', help='Get transfers')
     p_transfers.add_argument('--address', required=True)
     p_transfers.add_argument('--activity-type', help='Activity type (comma-separated): ACTIVITY_SPL_TRANSFER,ACTIVITY_SPL_BURN,ACTIVITY_SPL_MINT,etc')
     p_transfers.add_argument('--token-account', help='Filter by specific token account address')
@@ -132,7 +132,7 @@ def handle_account(args):
         params = {"address": args.address, "limit": args.limit}
         if args.before: params["before"] = args.before
         return make_request("/account/transactions", params)
-    elif args.action == 'transfers':
+    elif args.action == 'transfer':
         params = {
             "address": args.address,
             "page": args.page,
@@ -206,8 +206,15 @@ def setup_token_parser(subparsers):
     p_holders.add_argument('--page', type=int, default=1)
     p_holders.add_argument('--page-size', type=int, default=10)
     
-    sp.add_parser('price', help='Get price').add_argument('--address', required=True)
-    sp.add_parser('price-multi', help='Get multiple prices').add_argument('--addresses', required=True)
+    p_price = sp.add_parser('price', help='[DEPRECATED] Get price (use historical instead)')
+    p_price.add_argument('--address', required=True)
+    p_price.add_argument('--from-time', help='Start time in YYYYMMDD format')
+    p_price.add_argument('--to-time', help='End time in YYYYMMDD format')
+
+    p_price_multi = sp.add_parser('price-multi', help='[DEPRECATED] Get multiple prices (use historical instead)')
+    p_price_multi.add_argument('--addresses', required=True, help='Token addresses, comma-separated (max 50)')
+    p_price_multi.add_argument('--from-time', help='Start time in YYYYMMDD format')
+    p_price_multi.add_argument('--to-time', help='End time in YYYYMMDD format')
 
     p_market = sp.add_parser('markets', help='Get markets')
     p_market.add_argument('--token', required=True, help='Token address(es) (max 5, comma-separated)')
@@ -244,9 +251,7 @@ def setup_token_parser(subparsers):
     
     p_hist = sp.add_parser('historical', help='Get historical price data')
     p_hist.add_argument('--address', required=True)
-    p_hist.add_argument('--range', type=int, choices=[7, 30], help='Time range in days (7 or 30)')
-    p_hist.add_argument('--from-time', type=int, help='From Unix timestamp')
-    p_hist.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_hist.add_argument('--range', type=int, default=7, choices=[7, 30], help='Time range in days (7 or 30, default: 7)')
 
     p_search = sp.add_parser('search', help='Search tokens')
     p_search.add_argument('--keyword', required=True)
@@ -259,8 +264,16 @@ def handle_token(args):
     if args.action == 'meta': return make_request("/token/meta", {"address": args.address})
     elif args.action == 'meta-multi': return make_request("/token/meta/multi", {"address": args.addresses})
     elif args.action == 'holders': return make_request("/token/holders", {"address": args.address, "page": args.page, "page_size": args.page_size})
-    elif args.action == 'price': return make_request("/token/price", {"address": args.address})
-    elif args.action == 'price-multi': return make_request("/token/price/multi", {"address": args.addresses})
+    elif args.action == 'price':
+        params = {"address": args.address}
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/price", params)
+    elif args.action == 'price-multi':
+        params = {"address": args.addresses.split(',') if args.addresses else []}
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        return make_request("/token/price/multi", params)
     elif args.action == 'markets':
         params = {
             "token": args.token.split(',') if args.token else [],
@@ -281,10 +294,7 @@ def handle_token(args):
     elif args.action == 'defi': return make_request("/token/defi/activities", {"address": args.address, "page": args.page, "page_size": args.page_size})
     elif args.action == 'defi-export': return make_request("/token/defi/activities/export", {"address": args.address})
     elif args.action == 'historical':
-        params = {"address": args.address}
-        if args.range: params["range"] = args.range
-        if args.from_time: params["from_time"] = args.from_time
-        if args.to_time: params["to_time"] = args.to_time
+        params = {"address": args.address, "range": args.range}
         return make_request("/token/historical-data", params)
     elif args.action == 'search':
         params = {"keyword": args.keyword, "page": args.page, "page_size": args.page_size}
