@@ -446,24 +446,31 @@ def setup_transaction_parser(subparsers):
     parser = subparsers.add_parser('transaction', help='Transaction operations')
     sp = parser.add_subparsers(dest='action', required=True)
 
-    sp.add_parser('detail', help='Get details').add_argument('--signature', required=True)
-    sp.add_parser('detail-multi', help='Get multiple details').add_argument('--signatures', required=True, help='Comma separated keys')
-    sp.add_parser('last', help='Get last transactions').add_argument('--limit', type=int, default=10)
-    
-    p_actions = sp.add_parser('actions', help='Get actions')
-    p_actions.add_argument('--signature', required=True)
+    sp.add_parser('detail', help='Get transaction details').add_argument('--tx', required=True, help='Transaction signature')
 
-    p_actions_m = sp.add_parser('actions-multi', help='Get multiple actions')
-    p_actions_m.add_argument('--signatures', required=True)
-    
+    p_detail_multi = sp.add_parser('detail-multi', help='Get multiple transaction details')
+    p_detail_multi.add_argument('--txs', required=True, help='Transaction signatures, comma-separated (max 50)')
+
+    p_last = sp.add_parser('last', help='Get last transactions')
+    p_last.add_argument('--limit', type=int, default=10, choices=[10, 20, 30, 40, 60, 100], help='Number of transactions (10, 20, 30, 40, 60, 100, default: 10)')
+    p_last.add_argument('--filter', default='exceptVote', choices=['exceptVote', 'all'], help='Filter type (exceptVote, all, default: exceptVote)')
+
+    p_actions = sp.add_parser('actions', help='Get transaction actions/decoded instructions')
+    p_actions.add_argument('--tx', required=True, help='Transaction signature')
+
+    p_actions_m = sp.add_parser('actions-multi', help='Get multiple transaction actions')
+    p_actions_m.add_argument('--txs', required=True, help='Transaction signatures, comma-separated (max 50)')
+
     sp.add_parser('fees', help='Get network fees statistics')
 
 def handle_transaction(args):
-    if args.action == 'detail': return make_request("/transaction/detail", {"tx": args.signature})
-    elif args.action == 'detail-multi': return make_request("/transaction/detail/multi", {"txs": args.signatures})
-    elif args.action == 'last': return make_request("/transaction/last", {"limit": args.limit})
-    elif args.action == 'actions': return make_request("/transaction/actions", {"tx": args.signature})
-    elif args.action == 'actions-multi': return make_request("/transaction/actions/multi", {"txs": args.signatures})
+    if args.action == 'detail': return make_request("/transaction/detail", {"tx": args.tx})
+    elif args.action == 'detail-multi': return make_request("/transaction/detail/multi", {"tx": args.txs})
+    elif args.action == 'last':
+        params = {"limit": args.limit, "filter": args.filter}
+        return make_request("/transaction/last", params)
+    elif args.action == 'actions': return make_request("/transaction/actions", {"tx": args.tx})
+    elif args.action == 'actions-multi': return make_request("/transaction/actions/multi", {"tx": args.txs})
     elif args.action == 'fees': return make_request("/transaction/fees")
 
 
@@ -480,23 +487,31 @@ def setup_nft_parser(subparsers):
     p_act = sp.add_parser('activities', help='Get NFT activities')
     p_act.add_argument('--from', help='Filter from address')
     p_act.add_argument('--to', help='Filter to address')
-    p_act.add_argument('--source', help='Filter by source')
-    p_act.add_argument('--activity-type', help='Filter by activity type')
+    p_act.add_argument('--source', help='Filter by source address(es) (comma-separated, max 5)')
+    p_act.add_argument('--activity-type', help='Filter by activity type (comma-separated): ACTIVITY_NFT_SOLD,ACTIVITY_NFT_LISTING,ACTIVITY_NFT_BIDDING,ACTIVITY_NFT_CANCEL_BID,ACTIVITY_NFT_CANCEL_LIST,ACTIVITY_NFT_REJECT_BID,ACTIVITY_NFT_UPDATE_PRICE,ACTIVITY_NFT_LIST_AUCTION')
     p_act.add_argument('--token', help='Filter by token address')
     p_act.add_argument('--collection', help='Filter by collection')
+    p_act.add_argument('--currency-token', help='Currency token address')
+    p_act.add_argument('--price', nargs=2, type=float, help='Price range filter (min max, requires currency_token parameter)')
     p_act.add_argument('--from-time', type=int, help='From Unix timestamp')
     p_act.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_act.add_argument('--block-time', nargs=2, type=int, help='[DEPRECATED] Use from-time/to-time instead')
     p_act.add_argument('--page', type=int, default=1)
-    p_act.add_argument('--page-size', type=int, default=12, choices=[12, 24, 36])
+    p_act.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40, 60, 100])
     
-    p_cols = sp.add_parser('collections', help='Get collections')
+    p_cols = sp.add_parser('collections', help='Get NFT collections')
+    p_cols.add_argument('--range', type=int, default=1, choices=[1, 7, 30], help='Days range (1, 7, or 30, default: 1)')
+    p_cols.add_argument('--sort-by', default='volumes', choices=['items', 'floor_price', 'volumes'], help='Sort field (default: volumes)')
+    p_cols.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order (default: desc)')
+    p_cols.add_argument('--collection', help='Filter by collection ID')
     p_cols.add_argument('--page', type=int, default=1)
-    p_cols.add_argument('--page-size', type=int, default=10)
+    p_cols.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40])
     
-    p_items = sp.add_parser('items', help='Get collection items')
-    p_items.add_argument('--address', required=True)
+    p_items = sp.add_parser('items', help='Get NFT collection items')
+    p_items.add_argument('--collection', required=True, help='Collection address (required)')
+    p_items.add_argument('--sort-by', default='last_trade', choices=['last_trade', 'listing_price'], help='Sort field (default: last_trade)')
     p_items.add_argument('--page', type=int, default=1)
-    p_items.add_argument('--page-size', type=int, default=10)
+    p_items.add_argument('--page-size', type=int, default=12, choices=[12, 24, 36])
 
 def handle_nft(args):
     if args.action == 'news': return make_request("/nft/news", {"filter": args.filter, "page": args.page, "page_size": args.page_size})
@@ -504,15 +519,23 @@ def handle_nft(args):
         params = {"page": args.page, "page_size": args.page_size}
         if getattr(args, 'from'): params["from"] = getattr(args, 'from')
         if getattr(args, 'to'): params["to"] = getattr(args, 'to')
-        if args.source: params["source"] = args.source
-        if args.activity_type: params["activity_type"] = args.activity_type
+        if args.source: params["source"] = args.source.split(',') if args.source else None
+        if args.activity_type: params["activity_type"] = args.activity_type.split(',')
         if args.token: params["token"] = args.token
         if args.collection: params["collection"] = args.collection
+        if args.currency_token: params["currency_token"] = args.currency_token
+        if args.price: params["price"] = args.price
         if args.from_time: params["from_time"] = args.from_time
         if args.to_time: params["to_time"] = args.to_time
+        if args.block_time: params["block_time"] = args.block_time
         return make_request("/nft/activities", params)
-    elif args.action == 'collections': return make_request("/nft/collection/lists", {"page": args.page, "page_size": args.page_size})
-    elif args.action == 'items': return make_request("/nft/collection/items", {"collection": args.address, "page": args.page, "page_size": args.page_size})
+    elif args.action == 'collections':
+        params = {"range": args.range, "sort_by": args.sort_by, "sort_order": args.sort_order, "page": args.page, "page_size": args.page_size}
+        if args.collection: params["collection"] = args.collection
+        return make_request("/nft/collection/lists", params)
+    elif args.action == 'items':
+        params = {"collection": args.collection, "sort_by": args.sort_by, "page": args.page, "page_size": args.page_size}
+        return make_request("/nft/collection/items", params)
 
 
 # --- Block Commands ---

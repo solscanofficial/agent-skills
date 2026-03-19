@@ -277,29 +277,62 @@ Available MCP tools:
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `transaction detail` | `--signature` | Full tx details |
-| `transaction detail-multi` | `--signatures` | Batch tx details |
-| `transaction last` | `[--limit]` | Most recent transactions |
-| `transaction actions` | `--signature` | Human-readable decoded actions |
-| `transaction actions-multi` | `--signatures` | Batch decoded actions |
+| `transaction detail` | `--tx` | Full tx details (token and sol balance changes, IDL data, defi or transfer activities of each instructions) |
+| `transaction detail-multi` | `--txs` | Batch tx details (max 50 transactions) |
+| `transaction last` | `[--limit] [--filter]` | Most recent transactions |
+| `transaction actions` | `--tx` | Human-readable decoded actions (transfers, swap activities, nft activities...) |
+| `transaction actions-multi` | `--txs` | Batch decoded actions (max 50 transactions) |
 | `transaction fees` | — | Network fees statistics (no parameters) |
+
+**`transaction last` parameters:**
+> - `--limit`: Number of transactions to return (10, 20, 30, 40, 60, 100, default: 10)
+> - `--filter`: Filter type (exceptVote, all, default: exceptVote)
+
+**`transaction detail` parameters:**
+> - `--tx`: Transaction signature (required, length: 30-100 characters)
+
+**`transaction detail-multi` parameters:**
+> - `--txs`: Transaction signatures, comma-separated (required, max 50, each 30-100 characters)
+
+**`transaction actions` parameters:**
+> - `--tx`: Transaction signature (required, length: 30-100 characters)
+
+**`transaction actions-multi` parameters:**
+> - `--txs`: Transaction signatures, comma-separated (required, max 50, each 30-100 characters)
 
 ### NFT
 
 | Action | Key Params | Returns |
 |---|---|---|
 | `nft news` | `--filter [--page] [--page-size]` | Latest NFT activity feed (filter: created_time, page-size: 12/24/36) |
-| `nft activities` | `[filters...]` | NFT activities (all filters optional: from, to, activity-type, token, collection, etc.) |
-| `nft collections` | `[--page] [--page-size]` | Top NFT collections |
-| `nft items` | `--address [--page] [--page-size]` | Items inside a collection |
+| `nft activities` | `[filters...]` | NFT activities (all filters optional: from, to, source, activity-type, token, collection, currency-token, price, from-time, to-time) |
+| `nft collections` | `[--range] [--sort-by] [--sort-order] [--collection] [--page] [--page-size]` | Top NFT collections (range: 1/7/30 days, sort: items/floor_price/volumes) |
+| `nft items` | `--collection [--sort-by] [--page] [--page-size]` | Items inside a collection (sort: last_trade/listing_price, page-size: 12/24/36) |
 
 **`nft activities` parameters** (all optional):
 > - `--from`, `--to`: Filter by address
-> - `--source`: Filter by source
-> - `--activity-type`: Type of activity
+> - `--source`: Filter by source address(es) (comma-separated, max 5)
+> - `--activity-type`: Type of activity (comma-separated). Options: ACTIVITY_NFT_SOLD, ACTIVITY_NFT_LISTING, ACTIVITY_NFT_BIDDING, ACTIVITY_NFT_CANCEL_BID, ACTIVITY_NFT_CANCEL_LIST, ACTIVITY_NFT_REJECT_BID, ACTIVITY_NFT_UPDATE_PRICE, ACTIVITY_NFT_LIST_AUCTION
 > - `--token`: Token address
 > - `--collection`: Collection address
+> - `--currency-token`: Currency token address
+> - `--price`: Price range filter (min max, requires currency_token parameter)
 > - `--from-time`, `--to-time`: Unix timestamp range
+> - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
+> - `--block-time` ⚠️ **DEPRECATED**: Use `--from-time`/`--to-time` instead
+
+**`nft collections` parameters** (all optional):
+> - `--range`: Days range (1, 7, 30, default: 1)
+> - `--sort-by`: Sort field (items, floor_price, volumes, default: volumes)
+> - `--sort-order`: Sort order (asc, desc, default: desc)
+> - `--collection`: Filter by collection ID
+> - `--page`: Page number (default: 1)
+> - `--page-size`: 10, 20, 30, 40 (default: 10)
+
+**`nft items` parameters**:
+> - `--collection`: Collection address (required)
+> - `--sort-by`: Sort field (last_trade, listing_price, default: last_trade)
+> - `--page`: Page number (default: 1)
 > - `--page-size`: 12, 24, 36 (default: 12)
 
 ### Block
