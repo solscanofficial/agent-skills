@@ -21,7 +21,8 @@ accounts, tokens, NFTs, transactions, blocks, markets, and programs.
 - User needs to inspect a transaction signature or decode instructions
 - User asks about NFT collections, items, or recent NFT activity
 - User wants DeFi activity, transfer history, or reward exports
-- User wants to check program analytics or popular platforms
+- User wants to analyze a program's on-chain statistics, transaction metrics, or user activity
+- User needs to check popular DeFi platforms or view API usage
 
 ## Authentication
 
@@ -383,13 +384,19 @@ Available MCP tools:
 
 | Action | Key Params | Returns |
 |---|---|---|
-| `program list` | `[--sort-by] [--sort-order] [--page] [--page-size]` | All indexed programs (sort: num_txs\|num_txs_success\|interaction_volume\|success_rate\|active_users_24h) |
-| `program popular` | — | Most-used programs |
-| `program analytics` | `--address --range` | Program analytics (range: 7 or 30 days, required) |
+| `program list` | `[--sort-by] [--sort-order] [--page] [--page-size]` | Programs active in last 90 days (sort: num_txs\|num_txs_success\|interaction_volume\|success_rate\|active_users_24h) |
+| `program popular-platforms` | — | Popular DeFi platforms |
+| `program analytics` | `--address --range` | Program-level analytics for any Solana program (range: 7 or 30 days, required) |
+
+**`program list` parameters:**
+> - `--sort-by`: Sort field (num_txs, num_txs_success, interaction_volume, success_rate, active_users_24h, default: num_txs)
+> - `--sort-order`: Sort order (asc, desc)
+> - `--page`: Page number (default: 1)
+> - `--page-size`: 10, 20, 30, 40 (default: 10)
 
 **`program analytics` parameters:**
-> - `--address`: Program address (required)
-> - `--range`: 7 or 30 days (required)
+> - `--address`: Program address on Solana blockchain (required, minimum: 30 characters)
+> - `--range`: Analytics time range in days (7 or 30, required)
 
 ### Monitor
 

@@ -603,21 +603,24 @@ def setup_program_parser(subparsers):
     parser = subparsers.add_parser('program', help='Program operations')
     sp = parser.add_subparsers(dest='action', required=True)
     
-    p_list = sp.add_parser('list', help='List programs')
-    p_list.add_argument('--page', type=int, default=1)
-    p_list.add_argument('--page-size', type=int, default=10)
-    p_list.add_argument('--sort-by', default='num_txs', choices=['num_txs','num_txs_success','interaction_volume','success_rate','active_users_24h'])
-    p_list.add_argument('--sort-order', default='desc', choices=['asc', 'desc'])
+    p_list = sp.add_parser('list', help='List programs active in 90 days')
+    p_list.add_argument('--page', type=int, default=1, help='Page number (default: 1)')
+    p_list.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page: 10, 20, 30, or 40 (default: 10)')
+    p_list.add_argument('--sort-by', default='num_txs', choices=['num_txs','num_txs_success','interaction_volume','success_rate','active_users_24h'], help='Sort field (default: num_txs)')
+    p_list.add_argument('--sort-order', choices=['asc', 'desc'], help='Sort order: asc or desc')
+
+    sp.add_parser('popular-platforms', help='Get popular DeFi platforms')
     
-    sp.add_parser('popular', help='Popular platforms')
-    
-    p_analytics = sp.add_parser('analytics', help='Program analytics')
-    p_analytics.add_argument('--address', required=True)
-    p_analytics.add_argument('--range', type=int, required=True, choices=[7, 30], help='Analytics range in days (7 or 30)')
+    p_analytics = sp.add_parser('analytics', help='Get comprehensive on-chain analytics for a program')
+    p_analytics.add_argument('--address', required=True, help='Program address on Solana blockchain (minimum: 30 characters)')
+    p_analytics.add_argument('--range', type=int, required=True, choices=[7, 30], help='Analytics time range in days (7 or 30, required)')
 
 def handle_program(args):
-    if args.action == 'list': return make_request("/program/list", {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order})
-    elif args.action == 'popular': return make_request("/program/popular/platforms")
+    if args.action == 'list':
+        params = {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by}
+        if args.sort_order: params["sort_order"] = args.sort_order
+        return make_request("/program/list", params)
+    elif args.action == 'popular-platforms': return make_request("/program/popular/platforms")
     elif args.action == 'analytics': return make_request("/program/analytics", {"address": args.address, "range": args.range})
 
 # --- Monitor Commands ---
