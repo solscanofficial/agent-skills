@@ -180,7 +180,7 @@ Available MCP tools:
 | `token price-multi` ⚠️ | `--addresses [--from-time] [--to-time]` | **DEPRECATED** - Batch price history (use `token price-history` instead) |
 | `token price-latest` | `--addresses` | Latest price of multiple tokens (max 50, comma-separated) |
 | `token price-history` | `--addresses [--from-time] [--to-time]` | Historical price of multiple tokens (max 50, comma-separated; time: YYYYMMDD) |
-| `token holders` | `--address [--page] [--page-size] [--from-amount] [--to-amount]` | Top holder list with amounts (page-size: 10/20/30/40) |
+| `token holders` | `--address [--page] [--page-size] [--from-amount] [--to-amount] [--from-value] [--to-value]` | Top holder list with amounts (page-size: 10/20/30/40) |
 | `token markets` | `--token [--sort-by] [--program] [--page] [--page-size]` | DEX markets: 1 token for all markets, 2 tokens for pair search |
 | `token transfers` | `--address [filters...]` | Transfer history |
 | `token defi` | `--address [filters...]` | DeFi activity |
@@ -212,10 +212,12 @@ Available MCP tools:
 
 **`token holders` parameters:**
 > - `--address`: Token address (required)
-> - `--from-amount`: Minimum token holding amount (string format, optional)
-> - `--to-amount`: Maximum token holding amount (string format, optional)
 > - `--page`: Page number (default: 1)
 > - `--page-size`: 10, 20, 30, 40 (default: 10)
+> - `--from-amount`: Minimum token holding amount (string format, optional)
+> - `--to-amount`: Maximum token holding amount (string format, optional)
+> - `--from-value`: Minimum token holding value in USD (optional)
+> - `--to-value`: Maximum token holding value in USD (optional)
 
 **`token markets` parameters:**
 > - `--token`: Token address(es) - REQUIRED (1 token for all markets, 2 tokens for pair search, comma-separated)

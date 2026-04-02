@@ -265,6 +265,8 @@ def setup_token_parser(subparsers):
     p_holders.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40])
     p_holders.add_argument('--from-amount', help='Minimum token holding amount (string format)')
     p_holders.add_argument('--to-amount', help='Maximum token holding amount (string format)')
+    p_holders.add_argument('--from-value', type=float, help='Minimum token holding value in USD')
+    p_holders.add_argument('--to-value', type=float, help='Maximum token holding value in USD')
     
     p_price = sp.add_parser('price', help='[DEPRECATED] Get price (use historical instead)')
     p_price.add_argument('--address', required=True)
@@ -367,6 +369,8 @@ def handle_token(args):
         params = {"address": args.address, "page": args.page, "page_size": args.page_size}
         if args.from_amount: params["from_amount"] = args.from_amount
         if args.to_amount: params["to_amount"] = args.to_amount
+        if args.from_value: params["from_value"] = args.from_value
+        if args.to_value: params["to_value"] = args.to_value
         return make_request("/token/holders", params)
     elif args.action == 'price':
         params = {"address": args.address}
