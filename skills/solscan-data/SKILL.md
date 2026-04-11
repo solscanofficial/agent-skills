@@ -69,6 +69,7 @@ Available MCP tools:
 | `account metadata-multi` | `--addresses` | Batch metadata (max 50, comma-separated) |
 | `account funded-by` | `--addresses` | Funder accounts for multiple accounts (max 50, comma-separated) |
 | `account transfer` | `--address [filters...]` | SPL + SOL transfer history (supports activity-type, token, flow, time range filters) |
+| `account transfer-total` | `--address [filters...]` | Total transfer count of an account (supports token, flow, time range, amount, value filters) |
 | `account defi` | `--address [filters...]` | DeFi protocol interactions (activity-type, from, platform, source, token, time range) |
 | `account balance-change` | `--address [filters...]` | Historical balance changes (token, flow, amount, time range, remove-spam) |
 | `account transactions` | `--address [--before] [--limit]` | Recent transactions list (cursor-based pagination) |
@@ -106,6 +107,22 @@ Available MCP tools:
 > - `--sort-order`: Sort order: asc|desc (default: desc)
 >
 > **Deprecated parameters**: `sort_by`, `block_time` (use `from_time`/`to_time` instead)
+
+**`account transfer-total` parameters:**
+> - `--address`: Wallet address (required)
+> - `--token-account`: Filter transfers for a specific token account in the wallet
+> - `--from`: Filter transfers from address(es) (max 5, comma-separated)
+> - `--exclude-from`: Exclude transfers from address(es) (max 5, comma-separated)
+> - `--to`: Filter transfers to address(es) (max 5, comma-separated)
+> - `--exclude-to`: Exclude transfers to address(es) (max 5, comma-separated)
+> - `--token`: Filter by token address(es) (max 5, comma-separated). Use `So11111111111111111111111111111111111111111` for native SOL
+> - `--amount`: Amount range filter (min max)
+> - `--value`: USD value range filter (min max)
+> - `--from-time`, `--to-time`: Unix timestamp range filter. Default: 3 weeks ago
+> - `--exclude-amount-zero`: Exclude transfers with zero amount (boolean)
+> - `--flow`: Transfer direction: in|out
+>
+> **Note**: Defaults to the last 20 days if no time filters are specified. Hard-capped at 10 million records — tighten filters if you hit the limit to avoid truncated results.
 
 **`account defi` filter options:**
 > - `--activity-type`: Activity type filter (comma-separated). Options: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, ACTIVITY_SPL_TOKEN_STAKE, ACTIVITY_LST_STAKE, ACTIVITY_SPL_TOKEN_UNSTAKE, ACTIVITY_LST_UNSTAKE, ACTIVITY_TOKEN_DEPOSIT_VAULT, ACTIVITY_TOKEN_WITHDRAW_VAULT, ACTIVITY_SPL_INIT_MINT, ACTIVITY_ORDERBOOK_ORDER_PLACE, ACTIVITY_BORROWING, ACTIVITY_REPAY_BORROWING, ACTIVITY_LIQUIDATE_BORROWING, ACTIVITY_BRIDGE_ORDER_IN, ACTIVITY_BRIDGE_ORDER_OUT

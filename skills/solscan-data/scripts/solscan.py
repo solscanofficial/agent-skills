@@ -144,6 +144,21 @@ def setup_account_parser(subparsers):
     p_transfer_export.add_argument('--exclude-amount-zero', action='store_true', help='Exclude zero amount transfers')
     p_transfer_export.add_argument('--flow', choices=['in', 'out'], help='Transfer direction: in or out')
     
+    p_transfer_total = sp.add_parser('transfer-total', help='Get total transfer count')
+    p_transfer_total.add_argument('--address', required=True)
+    p_transfer_total.add_argument('--token-account', help='Filter by specific token account address')
+    p_transfer_total.add_argument('--from', help='Filter from address(es) (max 5, comma-separated)')
+    p_transfer_total.add_argument('--exclude-from', help='Exclude from address(es) (max 5, comma-separated)')
+    p_transfer_total.add_argument('--to', help='Filter to address(es) (max 5, comma-separated)')
+    p_transfer_total.add_argument('--exclude-to', help='Exclude to address(es) (max 5, comma-separated)')
+    p_transfer_total.add_argument('--token', help='Filter by token address(es) (max 5, comma-separated)')
+    p_transfer_total.add_argument('--amount', nargs=2, type=float, help='Amount range (min max)')
+    p_transfer_total.add_argument('--from-time', type=int, help='From Unix timestamp')
+    p_transfer_total.add_argument('--to-time', type=int, help='To Unix timestamp')
+    p_transfer_total.add_argument('--exclude-amount-zero', action='store_true', help='Exclude zero amount transfers')
+    p_transfer_total.add_argument('--flow', choices=['in', 'out'], help='Transfer direction: in or out')
+    p_transfer_total.add_argument('--value', nargs=2, type=float, help='Value range in USD (min max)')
+    
     sp.add_parser('metadata', help='Get metadata').add_argument('--address', required=True)
     sp.add_parser('metadata-multi', help='Get multiple metadata').add_argument('--addresses', required=True, help='Comma separated addresses')
     sp.add_parser('funded-by', help='Get funder accounts for multiple addresses').add_argument('--addresses', required=True, help='Comma separated addresses (max 50)')
@@ -245,6 +260,21 @@ def handle_account(args):
         if args.exclude_amount_zero: params["exclude_amount_zero"] = args.exclude_amount_zero
         if args.flow: params["flow"] = args.flow
         return make_request("/account/transfer/export", params)
+    elif args.action == 'transfer-total':
+        params = {"address": args.address}
+        if args.token_account: params["token_account"] = args.token_account
+        if getattr(args, 'from'): params["from"] = getattr(args, 'from')
+        if args.exclude_from: params["exclude_from"] = args.exclude_from
+        if getattr(args, 'to'): params["to"] = getattr(args, 'to')
+        if args.exclude_to: params["exclude_to"] = args.exclude_to
+        if args.token: params["token"] = args.token
+        if args.amount: params["amount"] = args.amount
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        if args.exclude_amount_zero: params["exclude_amount_zero"] = args.exclude_amount_zero
+        if args.flow: params["flow"] = args.flow
+        if args.value: params["value"] = args.value
+        return make_request("/account/transfer/total", params)
     elif args.action == 'metadata': return make_request("/account/metadata", {"address": args.address})
     elif args.action == 'metadata-multi': return make_request("/account/metadata/multi", {"address": args.addresses})
     elif args.action == 'funded-by': return make_request("/account/funded-by", {"address": args.addresses.split(',')})
