@@ -65,8 +65,9 @@ Available MCP tools:
 |---|---|---|
 | `account detail` | `--address` | Lamports, owner, executable flag |
 | `account data-decoded` | `--address` | Decoded account data |
-| `account metadata` | `--address` | Label, icon, tags, domain, funder |
-| `account metadata-multi` | `--addresses` | Batch metadata (comma-separated) |
+| `account metadata` | `--address` | Label, icon, tags, type, domain, funder (deprecated), active age |
+| `account metadata-multi` | `--addresses` | Batch metadata (max 50, comma-separated) |
+| `account funded-by` | `--addresses` | Funder accounts for multiple accounts (max 50, comma-separated) |
 | `account transfer` | `--address [filters...]` | SPL + SOL transfer history (supports activity-type, token, flow, time range filters) |
 | `account defi` | `--address [filters...]` | DeFi protocol interactions (activity-type, from, platform, source, token, time range) |
 | `account balance-change` | `--address [filters...]` | Historical balance changes (token, flow, amount, time range, remove-spam) |
@@ -80,7 +81,13 @@ Available MCP tools:
 | `account defi-export` | `--address [filters...]` | DeFi activity CSV (max 5000 items, max 1 req/min) |
 
 **`account metadata` response fields:**
-> `account_address`, `account_label`, `account_icon`, `account_tags`, `account_type`, `account_domain`, `funded_by`, `tx_hash`, `block_time`
+> `account_address` (account address), `account_label` (account label), `account_icon` (account icon URL), `account_tags` (list of tags, e.g., "dex_wallet"), `account_type` (type of account, e.g., "address"), `account_domain` (favourite domain name), `funded_by` (deprecated: contains `funded_by` funder address, `tx_hash`, `block_time`), `active_age` (days since wallet was first funded)
+
+**`account funded-by` parameters:**
+> - `--addresses`: Comma-separated list of wallet addresses (required, max 50)
+
+**`account funded-by` response fields:**
+> `address` (account address), `funded_by` (funder's address), `tx_hash` (transaction hash when funded), `block_time` (block time when funded)
 
 **`account transfer` filter options:**
 > - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY
@@ -366,6 +373,7 @@ Available MCP tools:
 | `market list` | `[--page] [--page-size] [--program] [--token-address] [--sort-by] [--sort-order]` | All trading pools/markets (sort: created_time\|volumes_24h\|trades_24h) |
 | `market info` | `--address` | Get market/pool details by address |
 | `market volume` | `--address [--time]` | Get historical market data and volume |
+| `market positions` | `--address [--page] [--page-size] [--sort-by] [--sort-order] [--in-range]` | Get market positions for a market (sort: position_value\|created_time) |
 
 **`market list` parameters:**
 > - `--page`: Page number (default: 1)
@@ -381,6 +389,17 @@ Available MCP tools:
 **`market volume` parameters:**
 > - `--address`: Market ID/address (required, minimum length: 30 characters)
 > - `--time`: Filter data by time range in YYYYMMDD format. Pass start and end date to filter by time range (e.g., `--time 20240701 20240715`). Accepts 1-2 values (optional)
+
+**`market positions` parameters:**
+> - `--address`: Market ID (required)
+> - `--page`: Page number (default: 1)
+> - `--page-size`: 10, 20, 30, 40 (default: 10)
+> - `--sort-by`: Sort field (position_value, created_time, default: position_value)
+> - `--sort-order`: Sort order (asc, desc, default: desc)
+> - `--in-range`: Filter positions that are in range or out of range (optional)
+
+**`market positions` response fields:**
+> `position_id` (the position id), `pool_id` (the market id), `created_time` (timestamp of position creation), `program` (the program owner), `token_address` (the token address of position), `position_owner` (the owner of the position), `position_value` (the value of the position), `position_type` (the type of the position, e.g., "clmm"), `is_pos_in_range` (whether position is in or out of range), `token_info` (token infos in pool: token_1, token_2, amount_1, amount_2), `price_info` (price details: current_price, lower_price, upper_price, value, is_in_range, updated_time)
 
 ### Program
 

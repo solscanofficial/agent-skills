@@ -146,6 +146,7 @@ def setup_account_parser(subparsers):
     
     sp.add_parser('metadata', help='Get metadata').add_argument('--address', required=True)
     sp.add_parser('metadata-multi', help='Get multiple metadata').add_argument('--addresses', required=True, help='Comma separated addresses')
+    sp.add_parser('funded-by', help='Get funder accounts for multiple addresses').add_argument('--addresses', required=True, help='Comma separated addresses (max 50)')
 
     p_leader = sp.add_parser('leaderboard', help='Get leaderboard')
     p_leader.add_argument('--sort-by', default='total_values', choices=['sol_values', 'stake_values', 'token_values', 'total_values'], help='Sort by field (default: total_values)')
@@ -246,6 +247,7 @@ def handle_account(args):
         return make_request("/account/transfer/export", params)
     elif args.action == 'metadata': return make_request("/account/metadata", {"address": args.address})
     elif args.action == 'metadata-multi': return make_request("/account/metadata/multi", {"address": args.addresses})
+    elif args.action == 'funded-by': return make_request("/account/funded-by", {"address": args.addresses.split(',')})
     elif args.action == 'leaderboard':
         params = {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by}
         if args.sort_order: params["sort_order"] = args.sort_order
@@ -590,6 +592,14 @@ def setup_market_parser(subparsers):
     p_mvol.add_argument('--address', required=True, help='Market ID/address')
     p_mvol.add_argument('--time', nargs=2, help='Time range in YYYYMMDD format (e.g., 20240701 20240715)')
 
+    p_mpos = sp.add_parser('positions', help='Get market positions')
+    p_mpos.add_argument('--address', required=True, help='Market ID')
+    p_mpos.add_argument('--page', type=int, default=1, help='Page number (default: 1)')
+    p_mpos.add_argument('--page-size', type=int, default=10, choices=[10, 20, 30, 40], help='Items per page (default: 10)')
+    p_mpos.add_argument('--sort-by', default='position_value', choices=['position_value', 'created_time'], help='Sort field (default: position_value)')
+    p_mpos.add_argument('--sort-order', default='desc', choices=['asc', 'desc'], help='Sort order (default: desc)')
+    p_mpos.add_argument('--in-range', help='Filter positions in range or out of range')
+
 def handle_market(args):
     if args.action == 'list':
         params = {"page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
@@ -601,6 +611,10 @@ def handle_market(args):
         params = {"address": args.address}
         if args.time: params["time"] = args.time
         return make_request("/market/volume", params)
+    elif args.action == 'positions':
+        params = {"address": args.address, "page": args.page, "page_size": args.page_size, "sort_by": args.sort_by, "sort_order": args.sort_order}
+        if args.in_range: params["in_range"] = args.in_range
+        return make_request("/market/positions", params)
 
 # --- Program Commands ---
 def setup_program_parser(subparsers):
