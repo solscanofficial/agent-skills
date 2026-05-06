@@ -91,7 +91,7 @@ Available MCP tools:
 > `address` (account address), `funded_by` (funder's address), `tx_hash` (transaction hash when funded), `block_time` (block time when funded)
 
 **`account transfer` filter options:**
-> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY
+> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE
 > - `--token-account`: Filter transfers for a specific token account in the wallet
 > - `--from`: Filter by source address(es) (max 5, comma-separated)
 > - `--exclude-from`: Exclude transfers from address(es) (max 5, comma-separated)
@@ -165,7 +165,7 @@ Available MCP tools:
 > - `--time-to`: End time (Unix timestamp in seconds, default: current time)
 
 **`account transfer-export` filter options:**
-> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY
+> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE
 > - `--token-account`: Filter by specific token account address
 > - `--from`: Filter from address
 > - `--to`: Filter to address
