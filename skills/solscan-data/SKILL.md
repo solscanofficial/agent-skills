@@ -76,10 +76,11 @@ Available MCP tools:
 | `account portfolio` | `--address [--exclude-low-score-tokens]` | Token holdings with USD value |
 | `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
 | `account stake` | `--address [--page] [--page-size] [--sort-by] [--sort-order]` | Active stake accounts (page-size: 10/20/30/40) |
-| `account reward-export` | `--address [--time-from] [--time-to]` | Staking reward history CSV (max 5000 items, max 1 req/min) |
-| `account transfer-export` | `--address [filters...]` | Transfer history CSV (max 5000 items, max 1 req/min) |
+| `account stake-reward` | `--address [--from-time] [--to-time] [--page] [--page-size]` | Stake rewards with pagination (page-size: 10/20/30/40/60/100) |
+| `account reward-export` | `--address [--from-time] [--to-time]` | Staking reward history CSV (max 5000 items, max 10 req/min) |
+| `account transfer-export` | `--address [filters...]` | Transfer history CSV (max 5000 items, max 10 req/min) |
 | `account leaderboard` | `[--sort-by] [--sort-order] [--page] [--page-size]` | Top accounts by activity |
-| `account defi-export` | `--address [filters...]` | DeFi activity CSV (max 5000 items, max 1 req/min) |
+| `account defi-export` | `--address [filters...]` | DeFi activity CSV (max 5000 items, max 10 req/min) |
 
 **`account metadata` response fields:**
 > `account_address` (account address), `account_label` (account label), `account_icon` (account icon URL), `account_tags` (list of tags, e.g., "dex_wallet"), `account_type` (type of account, e.g., "address"), `account_domain` (favourite domain name), `funded_by` (deprecated: contains `funded_by` funder address, `tx_hash`, `block_time`), `active_age` (days since wallet was first funded)
@@ -91,7 +92,7 @@ Available MCP tools:
 > `address` (account address), `funded_by` (funder's address), `tx_hash` (transaction hash when funded), `block_time` (block time when funded)
 
 **`account transfer` filter options:**
-> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE
+> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE, ACTIVITY_SPL_WITHDRAW_EXCESS_LAMPORTS, ACTIVITY_SPL_UNWRAP_LAMPORTS
 > - `--token-account`: Filter transfers for a specific token account in the wallet
 > - `--from`: Filter by source address(es) (max 5, comma-separated)
 > - `--exclude-from`: Exclude transfers from address(es) (max 5, comma-separated)
@@ -110,6 +111,7 @@ Available MCP tools:
 
 **`account transfer-total` parameters:**
 > - `--address`: Wallet address (required)
+> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE, ACTIVITY_SPL_WITHDRAW_EXCESS_LAMPORTS, ACTIVITY_SPL_UNWRAP_LAMPORTS
 > - `--token-account`: Filter transfers for a specific token account in the wallet
 > - `--from`: Filter transfers from address(es) (max 5, comma-separated)
 > - `--exclude-from`: Exclude transfers from address(es) (max 5, comma-separated)
@@ -124,13 +126,15 @@ Available MCP tools:
 >
 > **Note**: Defaults to the last 20 days if no time filters are specified. Hard-capped at 10 million records — tighten filters if you hit the limit to avoid truncated results.
 
-**`account defi` filter options:**
+**`account defi` parameters:**
+> - `--address`: Wallet address (required)
 > - `--activity-type`: Activity type filter (comma-separated). Options: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, ACTIVITY_SPL_TOKEN_STAKE, ACTIVITY_LST_STAKE, ACTIVITY_SPL_TOKEN_UNSTAKE, ACTIVITY_LST_UNSTAKE, ACTIVITY_TOKEN_DEPOSIT_VAULT, ACTIVITY_TOKEN_WITHDRAW_VAULT, ACTIVITY_SPL_INIT_MINT, ACTIVITY_ORDERBOOK_ORDER_PLACE, ACTIVITY_BORROWING, ACTIVITY_REPAY_BORROWING, ACTIVITY_LIQUIDATE_BORROWING, ACTIVITY_BRIDGE_ORDER_IN, ACTIVITY_BRIDGE_ORDER_OUT
 > - `--from`: Filter activities from a specific address
-> - `--platform`: Filter by platform address(es) (comma-separated, max 5)
 > - `--source`: Filter by source address(es) (comma-separated, max 5)
 > - `--token`: Filter by token address
-> - `--from-time`, `--to-time`: Unix timestamp range filter
+> - `--value`: USD value range filter (min max)
+> - `--from-time`, `--to-time`: Unix timestamp range filter (in seconds)
+> - `--page`: Page number (default: 1)
 > - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
 > - `--sort-by`: Sort field (default: block_time, options: block_time)
 > - `--sort-order`: Sort order: asc|desc (default: desc)
@@ -160,12 +164,25 @@ Available MCP tools:
 > - `--sort-order`: asc|desc
 > - `--page-size`: 10, 20, 30, 40 (default: 10)
 
+**`account stake-reward` parameters:**
+> - `--address`: Stake account address (required)
+> - `--from-time`: Start time (Unix timestamp in seconds, optional)
+> - `--to-time`: End time (Unix timestamp in seconds, optional)
+> - `--page`: Page number (default: 1)
+> - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
+
 **`account reward-export` parameters:**
-> - `--time-from`: Start time (Unix timestamp in seconds, default: 1 month before time-to)
-> - `--time-to`: End time (Unix timestamp in seconds, default: current time)
+> - `--address`: Wallet address (required)
+> - `--from-time`: Start time (Unix timestamp in seconds, default: 1 month before to-time)
+> - `--to-time`: End time (Unix timestamp in seconds, default: current time)
+> - `--time-from`: [DEPRECATED] Use --from-time instead
+> - `--time-to`: [DEPRECATED] Use --to-time instead
+> - If no time filter is provided, the API returns staking rewards from the past 1 month
+> - **Maximum items**: 5000 items per request
+> - **Rate limit**: Max 10 requests per minute
 
 **`account transfer-export` filter options:**
-> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE
+> - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, ACTIVITY_SPL_TOKEN_WITHDRAW_STAKE, ACTIVITY_SPL_TOKEN_SPLIT_STAKE, ACTIVITY_SPL_TOKEN_MERGE_STAKE, ACTIVITY_SPL_VOTE_WITHDRAW, ACTIVITY_SPL_SET_OWNER_AUTHORITY, ACTIVITY_SPL_WITHDRAW_FROM_NONCE, ACTIVITY_SPL_WITHDRAW_EXCESS_LAMPORTS, ACTIVITY_SPL_UNWRAP_LAMPORTS
 > - `--token-account`: Filter by specific token account address
 > - `--from`: Filter from address
 > - `--to`: Filter to address
@@ -184,13 +201,17 @@ Available MCP tools:
 
 **`account defi-export` filter options:**
 > - `--activity-type`: Activity type filter (comma-separated). Options: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, ACTIVITY_SPL_TOKEN_STAKE, ACTIVITY_LST_STAKE, ACTIVITY_SPL_TOKEN_UNSTAKE, ACTIVITY_LST_UNSTAKE, ACTIVITY_TOKEN_DEPOSIT_VAULT, ACTIVITY_TOKEN_WITHDRAW_VAULT, ACTIVITY_SPL_INIT_MINT, ACTIVITY_ORDERBOOK_ORDER_PLACE, ACTIVITY_BORROWING, ACTIVITY_REPAY_BORROWING, ACTIVITY_LIQUIDATE_BORROWING, ACTIVITY_BRIDGE_ORDER_IN, ACTIVITY_BRIDGE_ORDER_OUT
-> - `--from`: Filter activities from a specific address
-> - `--platform`: Filter by platform address(es) (comma-separated, max 5)
-> - `--source`: Filter by source address(es) (comma-separated, max 5)
-> - `--token`: Filter by token address
-> - `--from-time`, `--to-time`: Unix timestamp range
+> - `--from`: Filter activities from an address
+> - `--platform`: Filter by list platform addresses (comma-separated, max 5)
+> - `--source`: Filter by list source addresses (comma-separated, max 5)
+> - `--token`: Filter activities data by token address
+> - `--value`: Filter by value range (USD)
+> - `--from-time`, `--to-time`: Filter by time range (Unix timestamp in seconds)
 > - `--sort-by`: Sort field (default: block_time, options: block_time)
 > - `--sort-order`: Sort order: asc|desc (default: desc)
+>
+> **Rate limit**: Max 10 requests per minute
+> **Maximum items**: 5000 items per request
 >
 > **Deprecated parameters**: `block_time` (use `from_time`/`to_time` instead)
 
@@ -208,7 +229,7 @@ Available MCP tools:
 | `token markets` | `--token [--sort-by] [--program] [--page] [--page-size]` | DEX markets: 1 token for all markets, 2 tokens for pair search |
 | `token transfers` | `--address [filters...]` | Transfer history |
 | `token defi` | `--address [filters...]` | DeFi activity |
-| `token defi-export` | `--address [filters...]` | DeFi activity CSV |
+| `token defi-export` | `--address [filters...]` | DeFi activity CSV (max 5000 items, max 10 req/min) |
 | `token historical` | `--address [--range]` | Historical data (price, volume, holder, trader,...) for a token (range: 7 or 30 days, default: 7) |
 | `token search` | `--keyword [--search-mode] [--search-by] [--sort-by] [--sort-order] [--page] [--page-size]` | Search tokens by keyword/address/name/symbol |
 | `token trending` | `[--limit]` | Currently trending tokens |
@@ -251,6 +272,7 @@ Available MCP tools:
 > - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
 
 **`token transfers` filter options:**
+> - `--address`: Token address (required)
 > - `--activity-type`: Transfer type filter (comma-separated). Options: ACTIVITY_SPL_TRANSFER, ACTIVITY_SPL_BURN, ACTIVITY_SPL_MINT, ACTIVITY_SPL_CREATE_ACCOUNT, ACTIVITY_SPL_CLOSE_ACCOUNT, etc.
 > - `--from`: Filter from address(es) (max 5, comma-separated)
 > - `--exclude-from`: Exclude from address(es) (max 5, comma-separated)
@@ -259,30 +281,39 @@ Available MCP tools:
 > - `--amount`: Amount range (min max)
 > - `--value`: USD value range (min max)
 > - `--exclude-amount-zero`: Exclude zero amount transfers (boolean flag)
+> - `--from-time`, `--to-time`: Unix timestamp range filter (in seconds)
+> - `--page`: Page number (default: 1)
 > - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
 > - `--sort-by`: block_time (default: block_time)
 > - `--sort-order`: asc|desc (default: desc)
 
 **`token defi` filter options:**
+> - `--address`: Token address (required)
 > - `--activity-type`: Activity type filter (comma-separated). Options: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, etc.
 > - `--from`: Filter activities from a specific address
-> - `--platform`: Filter by platform address(es) (comma-separated, max 5)
 > - `--source`: Filter by source address(es) (comma-separated, max 5)
 > - `--token`: Filter by token address
-> - `--from-time`, `--to-time`: Unix timestamp range filter
+> - `--value`: USD value range filter (min max)
+> - `--from-time`, `--to-time`: Unix timestamp range filter (in seconds)
+> - `--page`: Page number (default: 1)
 > - `--page-size`: 10, 20, 30, 40, 60, 100 (default: 10)
 > - `--sort-by`: block_time (default: block_time)
 > - `--sort-order`: asc|desc (default: desc)
 
 **`token defi-export` filter options:**
-> - `--activity-type`: Activity type filter (comma-separated): ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, etc.
-> - `--from`: Filter activities from a specific address
-> - `--platform`: Filter by platform address(es) (comma-separated, max 5)
-> - `--source`: Filter by source address(es) (comma-separated, max 5)
-> - `--token`: Filter by token address
-> - `--from-time`, `--to-time`: Unix timestamp range filter
-> - `--sort-by`: block_time (default: block_time)
-> - `--sort-order`: asc|desc (default: desc)
+> - `--activity-type`: Activity type filter (comma-separated). Options: ACTIVITY_TOKEN_SWAP, ACTIVITY_AGG_TOKEN_SWAP, ACTIVITY_TOKEN_ADD_LIQ, ACTIVITY_TOKEN_REMOVE_LIQ, ACTIVITY_POOL_CREATE, ACTIVITY_SPL_TOKEN_STAKE, ACTIVITY_LST_STAKE, ACTIVITY_SPL_TOKEN_UNSTAKE, ACTIVITY_LST_UNSTAKE, ACTIVITY_TOKEN_DEPOSIT_VAULT, ACTIVITY_TOKEN_WITHDRAW_VAULT, ACTIVITY_SPL_INIT_MINT, ACTIVITY_ORDERBOOK_ORDER_PLACE, ACTIVITY_BORROWING, ACTIVITY_REPAY_BORROWING, ACTIVITY_LIQUIDATE_BORROWING, ACTIVITY_BRIDGE_ORDER_IN, ACTIVITY_BRIDGE_ORDER_OUT
+> - `--from`: Filter activities from an address
+> - `--platform`: Filter by list platform addresses (comma-separated, max 5)
+> - `--source`: Filter by list source addresses (comma-separated, max 5)
+> - `--token`: Filter activities data by token address
+> - `--from-time`, `--to-time`: Filter by time range (Unix timestamp in seconds)
+> - `--sort-by`: Sort field (default: block_time, options: block_time)
+> - `--sort-order`: Sort order: asc|desc (default: desc)
+>
+> **Rate limit**: Max 10 requests per minute
+> **Maximum items**: 5000 items per request
+>
+> **Deprecated parameters**: `block_time` (use `from_time`/`to_time` instead)
 
 **`token historical` parameters:**
 > - `--address`: Token address (required)
