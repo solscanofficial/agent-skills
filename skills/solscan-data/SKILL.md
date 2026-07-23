@@ -457,7 +457,7 @@ Available MCP tools:
 > - `--time`: Filter data by time range in YYYYMMDD format. Pass start and end date to filter by time range (e.g., `--time 20240701 20240715`). Accepts 1-2 values (optional)
 
 **`market positions` parameters:**
-> - `--address`: Market ID (required)
+> - `--address`: Market address/Pool address (required)
 > - `--page`: Page number (default: 1)
 > - `--page-size`: 10, 20, 30, 40 (default: 10)
 > - `--sort-by`: Sort field (position_value, created_time, default: position_value)
