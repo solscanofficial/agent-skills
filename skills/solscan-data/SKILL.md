@@ -73,6 +73,7 @@ Available MCP tools:
 | `account defi` | `--address [filters...]` | DeFi protocol interactions (activity-type, from, platform, source, token, time range) |
 | `account balance-change` | `--address [filters...]` | Historical balance changes (token, flow, amount, time range, remove-spam) |
 | `account transactions` | `--address [--before] [--limit]` | Recent transactions list (cursor-based pagination) |
+| `account transactions-enhanced` | `--address [filters...]` | Raw Solana transaction objects (same shape as `getTransaction` RPC) with server-side filtering by time, slot, signature range, signer, token, program, instruction discriminator. Upgraded version of `account transactions` |
 | `account portfolio` | `--address [--exclude-low-score-tokens]` | Token holdings with USD value |
 | `account tokens` | `--address --type [--page] [--page-size] [--hide-zero]` | Associated token/NFT accounts (page-size: 10/20/30/40) |
 | `account stake` | `--address [--page] [--page-size] [--sort-by] [--sort-order]` | Active stake accounts (page-size: 10/20/30/40) |
@@ -158,6 +159,23 @@ Available MCP tools:
 > - Uses cursor-based pagination with `--before` (transaction signature)
 > - `--limit`: 10, 20, 30, 40 (default: 10)
 > - No page/page_size parameters
+
+**`account transactions-enhanced` filter options:**
+> - `--address`: Wallet address (required)
+> - `--cursor`: Cursor for pagination, obtained from the previous page's response
+> - `--from-time`, `--to-time`: Unix timestamp range filter
+> - `--from-signature`, `--to-signature`: Filter transactions before/after a specific signature
+> - `--from-slot`, `--to-slot`: Filter transactions before/after a specific slot
+> - `--limit`: Number of transactions to return (default: 10)
+> - `--status`: true|false — filter successful (true) or failed (false) transactions
+> - `--program`: Filter by interacted program(s) (comma-separated)
+> - `--instruction`: Filter by interacted instruction(s) (comma-separated). Each value is the program address followed by the instruction discriminator in hex (first 2 bytes for Shank IDL, first 8 bytes for Anchor IDL), e.g. `pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA66063d1201daebea`
+> - `--token`: Filter by interacted token(s) (comma-separated)
+> - `--signer`: Filter by signer(s) (comma-separated)
+> - `--token-account`: Show transactions that interacted with associated token accounts (boolean flag)
+> - `--encoding`: json|jsonParsed|base64|base58 — format for transaction data (default: jsonParsed)
+>
+> **Note**: Returns raw transaction objects (same structure as the `getTransaction` RPC method), not the human-readable format used by `account transactions`.
 
 **`account stake` options:**
 > - `--sort-by`: active_stake|delegated_stake (default: active_stake)

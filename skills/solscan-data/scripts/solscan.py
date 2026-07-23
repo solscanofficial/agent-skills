@@ -56,7 +56,25 @@ def setup_account_parser(subparsers):
     p_txs.add_argument('--address', required=True)
     p_txs.add_argument('--before', help='Cursor for pagination (transaction signature)')
     p_txs.add_argument('--limit', type=int, default=10, choices=[10, 20, 30, 40], help='Number of transactions')
-    
+
+    p_txs_enh = sp.add_parser('transactions-enhanced', help='Get raw account transactions with full server-side filtering (upgraded version of transactions)')
+    p_txs_enh.add_argument('--address', required=True, help='Wallet address (required)')
+    p_txs_enh.add_argument('--cursor', help='Cursor for pagination, from previous page response')
+    p_txs_enh.add_argument('--from-time', type=int, help='Filter transactions after this Unix timestamp')
+    p_txs_enh.add_argument('--to-time', type=int, help='Filter transactions before this Unix timestamp')
+    p_txs_enh.add_argument('--from-signature', help='Filter transactions after this signature')
+    p_txs_enh.add_argument('--to-signature', help='Filter transactions before this signature')
+    p_txs_enh.add_argument('--limit', type=int, default=10, help='Number of transactions to return (default: 10)')
+    p_txs_enh.add_argument('--from-slot', type=int, help='Filter transactions after this slot')
+    p_txs_enh.add_argument('--to-slot', type=int, help='Filter transactions before this slot')
+    p_txs_enh.add_argument('--status', choices=['true', 'false'], help='Filter by status: true=successful, false=failed')
+    p_txs_enh.add_argument('--program', help='Filter by interacted program(s) (comma-separated)')
+    p_txs_enh.add_argument('--instruction', help='Filter by interacted instruction(s): program_address+discriminator hex, comma-separated (e.g. pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA66063d1201daebea)')
+    p_txs_enh.add_argument('--token', help='Filter by interacted token(s) (comma-separated)')
+    p_txs_enh.add_argument('--signer', help='Filter by signer(s) (comma-separated)')
+    p_txs_enh.add_argument('--token-account', action='store_true', help='Show transactions that interacted with associated token accounts')
+    p_txs_enh.add_argument('--encoding', default='jsonParsed', choices=['json', 'jsonParsed', 'base64', 'base58'], help='Format for transaction data (default: jsonParsed)')
+
     p_transfers = sp.add_parser('transfer', help='Get transfers')
     p_transfers.add_argument('--address', required=True)
     p_transfers.add_argument('--activity-type', help='Activity type (comma-separated): ACTIVITY_SPL_TRANSFER,ACTIVITY_SPL_BURN,ACTIVITY_SPL_MINT,etc')
@@ -188,6 +206,22 @@ def handle_account(args):
         params = {"address": args.address, "limit": args.limit}
         if args.before: params["before"] = args.before
         return make_request("/account/transactions", params)
+    elif args.action == 'transactions-enhanced':
+        params = {"address": args.address, "limit": args.limit, "encoding": args.encoding}
+        if args.cursor: params["cursor"] = args.cursor
+        if args.from_time: params["from_time"] = args.from_time
+        if args.to_time: params["to_time"] = args.to_time
+        if args.from_signature: params["from_signature"] = args.from_signature
+        if args.to_signature: params["to_signature"] = args.to_signature
+        if args.from_slot: params["from_slot"] = args.from_slot
+        if args.to_slot: params["to_slot"] = args.to_slot
+        if args.status: params["status"] = args.status
+        if args.program: params["program"] = args.program.split(',')
+        if args.instruction: params["instruction"] = args.instruction.split(',')
+        if args.token: params["token"] = args.token.split(',')
+        if args.signer: params["signer"] = args.signer.split(',')
+        if args.token_account: params["token_account"] = args.token_account
+        return make_request("/account/transactions/enhanced", params)
     elif args.action == 'transfer':
         params = {
             "address": args.address,
